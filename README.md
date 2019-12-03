@@ -13,6 +13,12 @@ The Core Translator won't override any existing translation nor resources files.
 
 ## How to run locally
 
+Build:
+
+```bash
+dotnet pack
+```
+
 Install:
 
 ```bash
@@ -24,6 +30,12 @@ Run:
 ```bash
 # In your project folder
 $ dotlang
+```
+
+Uninstall:
+
+```bash
+$ dotnet tool uninstall -g dotlang
 ```
 
 ## Before running the translator
@@ -67,14 +79,6 @@ Use the following code to inject localizer:
 ```
 
 Now run this app!
-
-## How to use
-
-* Install [.NET Core SDK](http://dot.net)
-* Compile the project using command `dotnet publich -c Release -r win-x64`
-* Run the published `exe` in your ASP.NET Core app root folder
-    - Under your app root folder, there shall be `Views` folder and `Models` folder.
-* Input your bing translate API key. Get it [here](https://portal.azure.com)
 
 ## Caution
 
