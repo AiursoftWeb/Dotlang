@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace CoreTranslator.Services
 {
@@ -43,17 +44,39 @@ namespace CoreTranslator.Services
                 for (int i = 0; i < document.Count; i++)
                 {
                     var textPart = document[i];
-                    if (textPart.StringType == StringType.Text && textPart.Content.Trim() != string.Empty && !textPart.Content.Contains('@'))
+                    if (textPart.StringType != StringType.Tag && textPart.Content.Trim() != string.Empty)
                     {
-                        if (!xmlResources.Any(t => t.SourceString.Trim() == textPart.Content.Trim()))
+                        if (!textPart.Content.Contains('@'))
                         {
-                            xmlResources.Add(new TranslatePair
+                            // Pure text
+                            if (!xmlResources.Any(t => t.SourceString.Trim() == textPart.Content.Trim()))
                             {
-                                SourceString = textPart.Content,
-                                TargetString = _bingtranslator.CallTranslate(textPart.Content, "zh")
-                            });
+                                xmlResources.Add(new TranslatePair
+                                {
+                                    SourceString = textPart.Content,
+                                    TargetString = _bingtranslator.CallTranslate(textPart.Content, "zh")
+                                });
+                            }
+                            textPart.Content = Translate(textPart.Content);
                         }
-                        textPart.Content = Translate(textPart.Content);
+                        else
+                        {
+                            // Text with razor.
+                            var reg = new Regex(@"Localizer\[""(.*?)\""]", RegexOptions.Compiled);
+                            var matched = reg.Matches(textPart.Content);
+                            foreach (Match match in matched)
+                            {
+                                var content = match.Groups[1].Value;
+                                if (!xmlResources.Any(t => t.SourceString.Trim() == content.Trim()))
+                                {
+                                    xmlResources.Add(new TranslatePair
+                                    {
+                                        SourceString = content,
+                                        TargetString = _bingtranslator.CallTranslate(content, "zh")
+                                    });
+                                }
+                            }
+                        }
                     }
                     else if (textPart.StringType == StringType.Tag && textPart.Content.ToLower().Trim().StartsWith("<script"))
                     {
