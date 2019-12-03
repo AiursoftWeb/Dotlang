@@ -46,7 +46,7 @@ namespace CoreTranslator.Services
                     var textPart = document[i];
                     if (textPart.StringType != StringType.Tag && textPart.Content.Trim() != string.Empty)
                     {
-                        if (!textPart.Content.Contains('@'))
+                        if (!textPart.Content.Contains('@') && textPart.StringType == StringType.Text)
                         {
                             // Pure text
                             if (!xmlResources.Any(t => t.SourceString.Trim() == textPart.Content.Trim()))
@@ -95,7 +95,10 @@ namespace CoreTranslator.Services
                 var xmlPosition = cshtml.Replace("\\Views\\", "\\Resources\\Views\\").Replace(".cshtml", ".zh.resx");
                 var toWrite = Directory.CreateDirectory(new FileInfo(xmlPosition).Directory.FullName);
                 _logger.LogInformation($"Writting: {xmlPosition}");
-                File.WriteAllText(xmlPosition, translatedResources);
+                if (!string.IsNullOrWhiteSpace(translatedResources))
+                {
+                    File.WriteAllText(xmlPosition, translatedResources);
+                }
                 File.WriteAllText(cshtml.Replace(".cshtml", ".cshtml"), translated);
             }
 
@@ -121,9 +124,12 @@ namespace CoreTranslator.Services
                     }
                     var translatedResources = GenerateXML(xmlResources);
                     var xmlPosition = csfile.Replace("\\Models\\", "\\Resources\\Models\\").Replace(".cs", ".zh.resx");
-                    var toWrite = Directory.CreateDirectory(new FileInfo(xmlPosition).Directory.FullName);
+                    Directory.CreateDirectory(new FileInfo(xmlPosition).Directory.FullName);
                     _logger.LogInformation($"Writting: {xmlPosition}");
-                    File.WriteAllText(xmlPosition, translatedResources);
+                    if (!string.IsNullOrWhiteSpace(translatedResources))
+                    {
+                        File.WriteAllText(xmlPosition, translatedResources);
+                    }
                 }
             }
         }
@@ -171,6 +177,10 @@ namespace CoreTranslator.Services
 
         public string GenerateXML(List<TranslatePair> sourceDocument)
         {
+            if (sourceDocument.Count == 0)
+            {
+                return string.Empty;
+            }
             var programPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             var generatedItems = string.Empty;
             foreach (var item in sourceDocument)

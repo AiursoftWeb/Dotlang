@@ -10,6 +10,18 @@ namespace CoreTranslator.Services
     {
         private readonly ILogger<BingTranslator> _logger;
         private static string _apiKey;
+        private readonly Dictionary<string, string> _cache = new Dictionary<string, string>
+        {
+            {"Aiursoft","Aiursoft"},
+            {"Operational","一切正常"}
+        };
+
+        private readonly Dictionary<string, string> _toReplace = new Dictionary<string, string>
+        {
+            {"艾尔索特","Aiursoft"},
+            {"艾乌索特","Aiursoft"}
+        };
+
 
         public BingTranslator(
             ILoggerFactory loggerFactory)
@@ -38,6 +50,10 @@ namespace CoreTranslator.Services
 
         public string CallTranslate(string input, string targetLanguage)
         {
+            if (_cache.ContainsKey(input))
+            {
+                return _cache[input];
+            }
             var inputSource = new List<Translation>
             {
                 new Translation { Text = input }
@@ -45,7 +61,12 @@ namespace CoreTranslator.Services
             var bingResponse = CallTranslateAPI(JsonConvert.SerializeObject(inputSource), targetLanguage);
             var result = JsonConvert.DeserializeObject<List<BingResponse>>(bingResponse);
             _logger.LogInformation($"\t\tCalled Bing: {input} - {result[0].Translations[0].Text}");
-            return result[0].Translations[0].Text;
+            var toReturn = result[0].Translations[0].Text;
+            foreach (var replaceRecord in _toReplace)
+            {
+                toReturn = toReturn.Replace(replaceRecord.Key, replaceRecord.Value);
+            }
+            return toReturn;
         }
     }
 }
