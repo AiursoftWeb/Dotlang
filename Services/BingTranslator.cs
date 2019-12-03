@@ -12,6 +12,7 @@ namespace CoreTranslator.Services
         private static string _apiKey;
         private readonly Dictionary<string, string> _cache = new Dictionary<string, string>
         {
+            {"x","x"},
             {"Aiursoft","Aiursoft"},
             {"Operational","一切正常"}
         };
@@ -19,7 +20,8 @@ namespace CoreTranslator.Services
         private readonly Dictionary<string, string> _toReplace = new Dictionary<string, string>
         {
             {"艾尔索特","Aiursoft"},
-            {"艾乌索特","Aiursoft"}
+            {"艾乌索特","Aiursoft"},
+            {"阿凡达","头像"}
         };
 
 
