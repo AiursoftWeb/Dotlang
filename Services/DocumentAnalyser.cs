@@ -27,7 +27,7 @@ namespace CoreTranslator.Services
 
         public (HTMLPart, string) GetNextPart(string html)
         {
-            var part = new HTMLPart();
+            var part = new HTMLPart(string.Empty);
             if (html.Trim().Length < 1)
             {
                 throw new Exception();

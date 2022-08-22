@@ -6,7 +6,7 @@ namespace CoreTranslator.Models
 {
     public class TranslatePair
     {
-        public string SourceString { get; set; }
-        public string TargetString { get; set; }
+        public string? SourceString { get; set; }
+        public string? TargetString { get; set; }
     }
 }

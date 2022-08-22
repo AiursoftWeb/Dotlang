@@ -50,7 +50,7 @@ namespace CoreTranslator.Services
             return json ?? throw new NullReferenceException();
         }
 
-        public string CallTranslate(string input, string targetLanguage)
+        public string? CallTranslate(string input, string targetLanguage)
         {
             if (_cache.ContainsKey(input))
             {
@@ -66,7 +66,7 @@ namespace CoreTranslator.Services
             var toReturn = result[0].Translations[0].Text;
             foreach (var replaceRecord in _toReplace)
             {
-                toReturn = toReturn.Replace(replaceRecord.Key, replaceRecord.Value);
+                toReturn = toReturn?.Replace(replaceRecord.Key, replaceRecord.Value);
             }
             return toReturn;
         }

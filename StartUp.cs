@@ -23,7 +23,7 @@ namespace CoreTranslator
         public void Configure(BingTranslator translator)
         {
             Console.WriteLine("Enter your bing API key:");
-            var key = Console.ReadLine().Trim();
+            var key = Console.ReadLine()?.Trim() ?? throw new NullReferenceException();
             translator.Init(key);
         }
     }

@@ -49,7 +49,7 @@ namespace CoreTranslator.Services
                         if (!textPart.Content.Contains('@') && textPart.StringType == StringType.Text)
                         {
                             // Pure text
-                            if (!xmlResources.Any(t => t.SourceString.Trim() == textPart.Content.Trim()))
+                            if (!xmlResources.Any(t => t.SourceString?.Trim() == textPart.Content.Trim()))
                             {
                                 xmlResources.Add(new TranslatePair
                                 {
@@ -67,7 +67,7 @@ namespace CoreTranslator.Services
                             foreach (Match match in matched)
                             {
                                 var content = match.Groups[1].Value;
-                                if (!xmlResources.Any(t => t.SourceString.Trim() == content.Trim()))
+                                if (!xmlResources.Any(t => t.SourceString?.Trim() == content.Trim()))
                                 {
                                     xmlResources.Add(new TranslatePair
                                     {
@@ -113,7 +113,7 @@ namespace CoreTranslator.Services
                     var xmlResources = new List<TranslatePair>();
                     foreach (var stringInCs in allstrings)
                     {
-                        if (!xmlResources.Any(t => t.SourceString.Trim() == stringInCs.Trim()))
+                        if (!xmlResources.Any(t => t.SourceString?.Trim() == stringInCs.Trim()))
                         {
                             xmlResources.Add(new TranslatePair
                             {
@@ -185,7 +185,7 @@ namespace CoreTranslator.Services
             var generatedItems = string.Empty;
             foreach (var item in sourceDocument)
             {
-                generatedItems += $"<data name=\"{item.SourceString.Trim()}\" xml:space=\"preserve\"><value>{item.TargetString.Trim()}</value></data>\r\n";
+                generatedItems += $"<data name=\"{item.SourceString?.Trim()}\" xml:space=\"preserve\"><value>{item.TargetString?.Trim()}</value></data>\r\n";
             }
             var template = File.ReadAllText(programPath + "\\Template.xml");
             var translated = template.Replace("{{Content}}", generatedItems);
