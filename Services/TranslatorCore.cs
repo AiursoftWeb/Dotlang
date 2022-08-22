@@ -93,7 +93,7 @@ namespace CoreTranslator.Services
 
 
                 var xmlPosition = cshtml.Replace("\\Views\\", "\\Resources\\Views\\").Replace(".cshtml", ".zh.resx");
-                var toWrite = Directory.CreateDirectory(new FileInfo(xmlPosition).Directory.FullName);
+                var toWrite = Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
                 _logger.LogInformation($"Writting: {xmlPosition}");
                 if (!string.IsNullOrWhiteSpace(translatedResources))
                 {
@@ -124,8 +124,8 @@ namespace CoreTranslator.Services
                     }
                     var translatedResources = GenerateXML(xmlResources);
                     var xmlPosition = csfile.Replace("\\Models\\", "\\Resources\\Models\\").Replace(".cs", ".zh.resx");
-                    Directory.CreateDirectory(new FileInfo(xmlPosition).Directory.FullName);
-                    _logger.LogInformation($"Writting: {xmlPosition}");
+                    Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
+                    _logger.LogInformation($"Writing: {xmlPosition}");
                     if (!string.IsNullOrWhiteSpace(translatedResources))
                     {
                         File.WriteAllText(xmlPosition, translatedResources);

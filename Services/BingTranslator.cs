@@ -9,7 +9,7 @@ namespace CoreTranslator.Services
     public class BingTranslator
     {
         private readonly ILogger<BingTranslator> _logger;
-        private static string _apiKey;
+        private static string? _apiKey;
         private readonly Dictionary<string, string> _cache = new Dictionary<string, string>
         {
             {"x","x"},
@@ -40,14 +40,14 @@ namespace CoreTranslator.Services
         {
             var apiAddress = $"https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to={targetLanguage}";
             var client = new RestClient(apiAddress);
-            var request = new RestRequest(Method.POST);
+            var request = new RestRequest(apiAddress, Method.Post);
             request
-                .AddHeader("Ocp-Apim-Subscription-Key", _apiKey)
+                .AddHeader("Ocp-Apim-Subscription-Key", _apiKey ?? throw new NullReferenceException())
                 .AddHeader("Content-Type", "application/json")
                 .AddParameter("undefined", inputJson, ParameterType.RequestBody);
 
             var json = client.Execute(request).Content;
-            return json;
+            return json ?? throw new NullReferenceException();
         }
 
         public string CallTranslate(string input, string targetLanguage)
@@ -61,7 +61,7 @@ namespace CoreTranslator.Services
                 new Translation { Text = input }
             };
             var bingResponse = CallTranslateAPI(JsonConvert.SerializeObject(inputSource), targetLanguage);
-            var result = JsonConvert.DeserializeObject<List<BingResponse>>(bingResponse);
+            var result = JsonConvert.DeserializeObject<List<BingResponse>>(bingResponse) ?? throw new NullReferenceException();
             _logger.LogInformation($"\t\tCalled Bing: {input} - {result[0].Translations[0].Text}");
             var toReturn = result[0].Translations[0].Text;
             foreach (var replaceRecord in _toReplace)

@@ -8,7 +8,7 @@ namespace CoreTranslator
         static void Main(string[] args)
         {
             BuildApplication()
-                .GetService<TranslatorCore>()
+                .GetRequiredService<TranslatorCore>()
                 .DoWork();
         }
 
@@ -20,7 +20,7 @@ namespace CoreTranslator
             startUp.ConfigureServices(services);
 
             var serviceProvider = services.BuildServiceProvider();
-            var bingTranslator = serviceProvider.GetService<BingTranslator>();
+            var bingTranslator = serviceProvider.GetRequiredService<BingTranslator>();
             startUp.Configure(bingTranslator);
             return serviceProvider;
         }
