@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!--Build and code-->
+		<OutputType>Exe</OutputType>
+		<Version>6.0.1</Version>
+		<TargetFramework>net6.0</TargetFramework>
+		<AssemblyName>dotlang</AssemblyName>
+		<RootNamespace>Aiursoft.Dotlang</RootNamespace>
+		<!--Tool-->
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>dotlang</ToolCommandName>
+		<!--Best practice-->
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<SelfContained>false</SelfContained>
+		<PublishTrimmed>false</PublishTrimmed>
+		<PublishReadyToRun>false</PublishReadyToRun>
+		<PublishSingleFile>false</PublishSingleFile>
+		<!--Nuget-->
+		<Company>Aiursoft</Company>
+		<Product>Dotlang</Product>
+		<Authors>anduin</Authors>
+		<Description>A tool that helps you generate translated .cshtml files and resources files for ASP.NET Core App.</Description>
+		<PackageTags>cli dotnet translate</PackageTags>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://gitlab.aiursoft.cn/Aiursoft/Dotlang</RepositoryUrl>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageId>Aiursoft.Dotlang</PackageId>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://gitlab.aiursoft.cn/Aiursoft/Dotlang</PackageProjectUrl>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dotlang.BingTranslate\Dotlang.BingTranslate.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Template.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
