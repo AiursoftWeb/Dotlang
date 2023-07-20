@@ -1,9 +1,9 @@
-﻿using Aiursoft.Dotlang.Core.Abstracts;
-using Aiursoft.Dotlang.Core.Framework;
+﻿using Aiursoft.CommandFramework.Abstracts;
+using Aiursoft.CommandFramework.Framework;
 
 namespace Aiursoft.Dotlang.BingTranslate;
 
-public class BingTranslatePlugin : IDotlangPlugin
+public class BingTranslatePlugin : IPlugin
 {
     public CommandHandler[] Install() => new CommandHandler[] { new TranslateHandler() };
 }

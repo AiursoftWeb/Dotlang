@@ -58,7 +58,7 @@ public class BingTranslator
         };
         var bingResponse = CallTranslateAPI(JsonConvert.SerializeObject(inputSource), targetLanguage);
         var result = JsonConvert.DeserializeObject<List<BingResponse>>(bingResponse) ?? throw new NullReferenceException();
-        _logger.LogInformation($"\t\tCalled Bing: {input} - {result[0].Translations?.First().Text}");
+        _logger.LogInformation("\\t\\tCalled Bing: {Input} - {Text}", input, result[0].Translations?.First().Text);
         var toReturn = result[0].Translations?.First().Text;
         foreach (var replaceRecord in _toReplace)
         {

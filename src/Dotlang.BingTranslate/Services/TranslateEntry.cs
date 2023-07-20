@@ -1,14 +1,12 @@
 ﻿using Aiursoft.Dotlang.BingTranslate.Models;
-using Aiursoft.Dotlang.BingTranslate.Services;
-using Aiursoft.Dotlang.Core.Abstracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Aiursoft.Dotlang.BingTranslate;
+namespace Aiursoft.Dotlang.BingTranslate.Services;
 
-public class TranslateEntry : IEntryService
+public class TranslateEntry
 {
     private readonly TranslateOptions _options;
     private readonly BingTranslator _bingTranslator;
@@ -32,20 +30,20 @@ public class TranslateEntry : IEntryService
     {
         _logger.LogInformation("Starting application...");
         var currentDirectory = Directory.GetCurrentDirectory();
-        string[] cshtmls = Directory.GetFileSystemEntries(currentDirectory, "*.cshtml", SearchOption.AllDirectories);
+        var cshtmls = Directory.GetFileSystemEntries(currentDirectory, "*.cshtml", SearchOption.AllDirectories);
         foreach (var cshtml in cshtmls)
         {
-            _logger.LogInformation($"Analysing: {cshtml}");
+            _logger.LogInformation("Analysing: {Cshtml}", cshtml);
             var fileName = Path.GetFileName(cshtml);
             if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
             {
                 continue;
             }
 
-            var file = File.ReadAllText(cshtml);
+            var file = await File.ReadAllTextAsync(cshtml);
             var document = _documentAnalyser.AnalyseFile(file);
             var xmlResources = new List<TranslatePair>();
-            _logger.LogInformation($"Translating: {cshtml}");
+            _logger.LogInformation("Translating: {Cshtml}", cshtml);
             for (int i = 0; i < document.Count; i++)
             {
                 var textPart = document[i];
@@ -54,7 +52,7 @@ public class TranslateEntry : IEntryService
                     if (!textPart.Content.Contains('@') && textPart.StringType == StringType.Text)
                     {
                         // Pure text
-                        if (!xmlResources.Any(t => t.SourceString?.Trim() == textPart.Content.Trim()))
+                        if (xmlResources.All(t => t.SourceString?.Trim() != textPart.Content.Trim()))
                         {
                             xmlResources.Add(new TranslatePair
                             {
@@ -72,7 +70,7 @@ public class TranslateEntry : IEntryService
                         foreach (Match match in matched)
                         {
                             var content = match.Groups[1].Value;
-                            if (!xmlResources.Any(t => t.SourceString?.Trim() == content.Trim()))
+                            if (xmlResources.All(t => t.SourceString?.Trim() != content.Trim()))
                             {
                                 xmlResources.Add(new TranslatePair
                                 {
@@ -92,14 +90,14 @@ public class TranslateEntry : IEntryService
                     document[i + 1].StringType = StringType.Tag;
                 }
             }
-            _logger.LogInformation($"Rendering: {cshtml}");
-            var translated = RenderCSHtml(document);
-            var translatedResources = GenerateXML(xmlResources);
+            _logger.LogInformation("Rendering: {Cshtml}", cshtml);
+            var translated = RenderCsHtml(document);
+            var translatedResources = GenerateXml(xmlResources);
 
 
             var xmlPosition = cshtml.Replace("\\Views\\", "\\Resources\\Views\\").Replace(".cshtml", $".{_options.TargetLanguage}.resx");
             Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
-            _logger.LogInformation($"Writting: {xmlPosition}");
+            _logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
             if (!string.IsNullOrWhiteSpace(translatedResources))
             {
                 await File.WriteAllTextAsync(xmlPosition, translatedResources);
@@ -110,53 +108,50 @@ public class TranslateEntry : IEntryService
         var modelsPath = Path.Combine(currentDirectory, "Models");
         if (Directory.Exists(modelsPath))
         {
-            string[] csfiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
-            foreach (var csfile in csfiles)
+            var csFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
+            foreach (var csFile in csFiles)
             {
-                var fileContent = await File.ReadAllTextAsync(csfile);
-                var allstrings = GetAllStringsInCS(fileContent);
+                var fileContent = await File.ReadAllTextAsync(csFile);
+                var allStrings = GetAllStringsInCs(fileContent);
                 var xmlResources = new List<TranslatePair>();
-                foreach (var stringInCs in allstrings)
+                foreach (var stringInCs in allStrings.Where(stringInCs => xmlResources.All(t => t.SourceString?.Trim() != stringInCs.Trim())))
                 {
-                    if (!xmlResources.Any(t => t.SourceString?.Trim() == stringInCs.Trim()))
+                    xmlResources.Add(new TranslatePair
                     {
-                        xmlResources.Add(new TranslatePair
-                        {
-                            SourceString = stringInCs,
-                            TargetString = _bingTranslator.CallTranslate(stringInCs, _options.TargetLanguage)
-                        });
-                    }
+                        SourceString = stringInCs,
+                        TargetString = _bingTranslator.CallTranslate(stringInCs, _options.TargetLanguage)
+                    });
                 }
-                var translatedResources = GenerateXML(xmlResources);
-                var xmlPosition = csfile.Replace("\\Models\\", "\\Resources\\Models\\").Replace(".cs", $".{_options.TargetLanguage}.resx");
+                var translatedResources = GenerateXml(xmlResources);
+                var xmlPosition = csFile.Replace("\\Models\\", "\\Resources\\Models\\").Replace(".cs", $".{_options.TargetLanguage}.resx");
                 Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
-                _logger.LogInformation($"Writing: {xmlPosition}");
+                _logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
                 if (!string.IsNullOrWhiteSpace(translatedResources))
                 {
-                    File.WriteAllText(xmlPosition, translatedResources);
+                    await File.WriteAllTextAsync(xmlPosition, translatedResources);
                 }
             }
         }
     }
 
-    public List<string> GetAllStringsInCS(string fileContent)
+    private List<string> GetAllStringsInCs(string fileContent)
     {
-        List<string> s = new List<string>();
-        if (fileContent.Where(t => t == '"').Count() < 2)
+        var s = new List<string>();
+        if (fileContent.Count(t => t == '"') < 2)
         {
             return s;
         }
-        while (fileContent.Where(t => t == '"').Count() >= 2)
+        while (fileContent.Count(t => t == '"') >= 2)
         {
-            fileContent = fileContent.Substring(fileContent.IndexOf('"') + 1);
-            string newString = fileContent.Substring(0, fileContent.IndexOf('"'));
-            fileContent = fileContent.Substring(fileContent.IndexOf('"') + 1);
+            fileContent = fileContent[(fileContent.IndexOf('"') + 1)..];
+            var newString = fileContent[..fileContent.IndexOf('"')];
+            fileContent = fileContent[(fileContent.IndexOf('"') + 1)..];
             s.Add(newString);
         }
         return s;
     }
 
-    public string RenderCSHtml(List<HTMLPart> parts)
+    public static string RenderCsHtml(List<HTMLPart> parts)
     {
         var cshtml = new StringBuilder();
         foreach (var part in parts)
@@ -187,7 +182,7 @@ public class TranslateEntry : IEntryService
     /// </summary>
     /// <param name="sourceDocument"></param>
     /// <returns></returns>
-    public string GenerateXML(List<TranslatePair> sourceDocument)
+    public static string GenerateXml(List<TranslatePair> sourceDocument)
     {
         if (sourceDocument.Count == 0)
         {

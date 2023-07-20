@@ -1,9 +1,10 @@
 ﻿using System.CommandLine;
+using Aiursoft.CommandFramework.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Aiursoft.Dotlang.Core.Framework;
 using Aiursoft.Dotlang.BingTranslate;
 
-namespace IDotlangPlugin.Tests;
+namespace Dotlang.Tests;
 
 [TestClass]
 public class IntegrationTests
@@ -12,7 +13,7 @@ public class IntegrationTests
 
     public IntegrationTests()
     {
-        this._program = new RootCommand("Test command.")
+        _program = new RootCommand("Test command.")
             .AddGlobalOptions()
             .AddPlugins(
                 new BingTranslatePlugin()

@@ -1,5 +1,4 @@
-﻿using Aiursoft.Dotlang.Core.Abstracts;
-using System.CommandLine;
+﻿using System.CommandLine;
 
 namespace Aiursoft.Dotlang.Core.Framework;
 
@@ -7,7 +6,7 @@ public static class OptionsProvider
 {
     public static readonly Option<string> PathOptions = new(
         aliases: new[] { "--path", "-p" },
-        description: "Path of the videos to be parsed.")
+        description: "Path of the project to be translated.")
     {
         IsRequired = true
     };
@@ -36,18 +35,6 @@ public static class OptionsProvider
         foreach (var option in options)
         {
             command.AddGlobalOption(option);
-        }
-        return command;
-    }
-
-    public static RootCommand AddPlugins(this RootCommand command, params IDotlangPlugin[] pluginInstallers)
-    {
-        foreach (var plugin in pluginInstallers)
-        {
-            foreach (var pluginFeature in plugin.Install())
-            {
-                command.Add(pluginFeature.BuildAsCommand());
-            }
         }
         return command;
     }
