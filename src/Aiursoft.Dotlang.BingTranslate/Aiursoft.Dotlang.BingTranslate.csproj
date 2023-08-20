@@ -14,7 +14,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Dotlang.Core\Dotlang.Core.csproj" />
+		<ProjectReference Include="..\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -19,7 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\Dotlang\Dotlang.csproj" />
+	  <ProjectReference Include="..\..\src\Aiursoft.Dotlang\Aiursoft.Dotlang.csproj" />
 	</ItemGroup>
 
 </Project>

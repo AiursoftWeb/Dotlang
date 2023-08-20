@@ -32,7 +32,7 @@
 	</PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dotlang.BingTranslate\Dotlang.BingTranslate.csproj" />
+    <ProjectReference Include="..\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj" />
   </ItemGroup>
 
   <ItemGroup>

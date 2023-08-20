@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dotlang", "src\Dotlang\Dotlang.csproj", "{F51C9750-5940-4EDF-9A7B-5E417F604484}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang", "src\Aiursoft.Dotlang\Aiursoft.Dotlang.csproj", "{F51C9750-5940-4EDF-9A7B-5E417F604484}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dotlang.BingTranslate", "src\Dotlang.BingTranslate\Dotlang.BingTranslate.csproj", "{D597828F-B939-4C2E-A4A0-7A0B9335D192}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.BingTranslate", "src\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj", "{D597828F-B939-4C2E-A4A0-7A0B9335D192}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dotlang.Core", "src\Dotlang.Core\Dotlang.Core.csproj", "{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.Core", "src\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj", "{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E143FC92-6B31-4915-8409-BD6A7AB56083}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{816BD1AD-7C14-40C1-A3F1-87D7D31AEE62}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dotlang.Tests", "tests\Dotlang.Tests\Dotlang.Tests.csproj", "{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.Tests", "tests\Aiursoft.Dotlang.Tests\Aiursoft.Dotlang.Tests.csproj", "{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
