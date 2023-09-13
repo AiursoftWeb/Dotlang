@@ -1,5 +1,6 @@
 ﻿using Aiursoft.Dotlang.Core.Framework;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.CommandLine;
 using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Services;
@@ -49,9 +50,12 @@ public class TranslateHandler : CommandHandler
 
     private Task ExecuteOverride(string path, bool dryRun, bool verbose, string key, string targetLang)
     {
-        var services = ServiceBuilder.BuildServices<StartUp>(verbose);
-        services.AddSingleton(new TranslateOptions { APIKey = key, TargetLanguage = targetLang });
-        var sp = services.BuildServiceProvider();
+        var hostBuilder = ServiceBuilder.BuildHost<StartUp>(verbose);
+        hostBuilder.ConfigureServices(services =>
+        {
+            services.AddSingleton(new TranslateOptions { APIKey = key, TargetLanguage = targetLang });
+        });
+        var sp = hostBuilder.Build().Services;
         var entry = sp.GetRequiredService<TranslateEntry>();
         return entry.OnServiceStartedAsync(path, !dryRun);
     }
