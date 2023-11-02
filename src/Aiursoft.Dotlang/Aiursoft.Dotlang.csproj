@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Version>7.0.1</Version>
+    <Version>7.0.2</Version>
     <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>dotlang</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang</RootNamespace>
@@ -26,9 +26,11 @@
     <PackageProjectUrl>https://gitlab.aiursoft.cn/Aiursoft/Dotlang</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://gitlab.aiursoft.cn/Aiursoft/Dotlang</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj" />
+    <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
   <ItemGroup>
     <None Update="Template.xml">
