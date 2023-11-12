@@ -50,7 +50,7 @@ public class TranslateHandler : CommandHandler
 
     private Task ExecuteOverride(string path, bool dryRun, bool verbose, string key, string targetLang)
     {
-        var hostBuilder = ServiceBuilder.BuildHost<StartUp>(verbose);
+        var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
         {
             services.AddSingleton(new TranslateOptions { APIKey = key, TargetLanguage = targetLang });
