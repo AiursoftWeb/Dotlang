@@ -26,7 +26,7 @@ public class TranslateEntry
     }
 
 
-    public async Task OnServiceStartedAsync(string path, bool shouldTakeAction)
+    public async Task StartTranslateAsync(string path, bool shouldTakeAction)
     {
         _logger.LogInformation("Starting application...");
         var currentDirectory = Directory.GetCurrentDirectory();

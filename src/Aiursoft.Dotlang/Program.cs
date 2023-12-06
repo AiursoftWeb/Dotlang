@@ -1,8 +1,5 @@
-﻿using Aiursoft.Dotlang.BingTranslate;
-using Aiursoft.CommandFramework;
+﻿using Aiursoft.CommandFramework.Models;
+using Aiursoft.Dotlang.BingTranslate;
 
-var command = new TranslateHandler().BuildAsCommand();
-
-return await new AiursoftCommandApp(command)
-    .RunAsync(args);
+await new TranslateHandler().RunAsync(args, defaultOption: CommonOptionsProvider.PathOptions);
     

@@ -43,13 +43,16 @@ public class TranslateHandler : ExecutableCommandHandlerBuilder
         });
         var sp = hostBuilder.Build().Services;
         var entry = sp.GetRequiredService<TranslateEntry>();
-        return entry.OnServiceStartedAsync(path, !dryRun);
+        return entry.StartTranslateAsync(path, !dryRun);
     }
 
     public override Option[] GetCommandOptions()
     {
         return new Option[]
         {
+            CommonOptionsProvider.VerboseOption,
+            CommonOptionsProvider.DryRunOption,
+            CommonOptionsProvider.PathOptions,
             _bingApiKey,
             _targetLang
         };

@@ -1,19 +1,12 @@
-﻿using Aiursoft.CommandFramework;
-using Aiursoft.Dotlang.BingTranslate;
+﻿using Aiursoft.Dotlang.BingTranslate;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Dotlang.Tests;
+namespace Aiursoft.Dotlang.Tests;
 
 [TestClass]
 public class IntegrationTests
 {
-    private readonly AiursoftCommandApp _program;
-
-    public IntegrationTests()
-    {
-        var command = new TranslateHandler().BuildAsCommand();
-        _program = new AiursoftCommandApp(command);
-    }
+    private readonly TranslateHandler _program = new();
 
     [TestMethod]
     public async Task InvokeHelp()
