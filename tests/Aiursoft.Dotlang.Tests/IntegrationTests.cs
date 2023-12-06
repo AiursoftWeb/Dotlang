@@ -1,27 +1,18 @@
 ﻿using Aiursoft.CommandFramework;
-using Aiursoft.CommandFramework.Extensions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Aiursoft.Dotlang.Core.Framework;
 using Aiursoft.Dotlang.BingTranslate;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Dotlang.Tests;
 
 [TestClass]
 public class IntegrationTests
 {
-    private readonly AiursoftCommand _program;
+    private readonly AiursoftCommandApp _program;
 
     public IntegrationTests()
     {
-        _program = new AiursoftCommand()
-            .Configure(command =>
-            {
-                command
-                    .AddGlobalOptions()
-                    .AddPlugins(
-                        new BingTranslatePlugin()
-                    );
-            });
+        var command = new TranslateHandler().BuildAsCommand();
+        _program = new AiursoftCommandApp(command);
     }
 
     [TestMethod]

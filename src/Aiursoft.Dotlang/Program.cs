@@ -1,16 +1,8 @@
-﻿using Aiursoft.Dotlang.Core.Framework;
-using Aiursoft.Dotlang.BingTranslate;
+﻿using Aiursoft.Dotlang.BingTranslate;
 using Aiursoft.CommandFramework;
-using Aiursoft.CommandFramework.Extensions;
 
-return await new AiursoftCommand()
-    .Configure(command =>
-    {
-        command
-            .AddGlobalOptions()
-            .AddPlugins(
-                new BingTranslatePlugin()
-            );
-    })
+var command = new TranslateHandler().BuildAsCommand();
+
+return await new AiursoftCommandApp(command)
     .RunAsync(args);
     
