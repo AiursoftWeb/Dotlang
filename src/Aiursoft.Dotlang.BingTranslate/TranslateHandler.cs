@@ -25,9 +25,9 @@ public class TranslateHandler : ExecutableCommandHandlerBuilder
         IsRequired = true
     };
 
-    public override string Name => "translate";
+    protected override string Name => "translate";
 
-    public override string Description => "The command to start translation based on Bing Translate.";
+    protected override string Description => "The command to start translation based on Bing Translate.";
 
     protected override Task Execute(InvocationContext context)
     {
@@ -46,7 +46,7 @@ public class TranslateHandler : ExecutableCommandHandlerBuilder
         return entry.StartTranslateAsync(path, !dryRun);
     }
 
-    public override Option[] GetCommandOptions()
+    protected override Option[] GetCommandOptions()
     {
         return new Option[]
         {
