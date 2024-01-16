@@ -10,14 +10,14 @@ public class BingTranslator
 {
     private readonly ILogger<BingTranslator> _logger;
     private readonly TranslateOptions _options;
-    private readonly Dictionary<string, string> _cache = new Dictionary<string, string>
+    private readonly Dictionary<string, string> _cache = new()
     {
         {"x","x"},
         {"Aiursoft","Aiursoft"},
         {"Operational","一切正常"}
     };
 
-    private readonly Dictionary<string, string> _toReplace = new Dictionary<string, string>
+    private readonly Dictionary<string, string> _toReplace = new()
     {
         {"艾尔索特","Aiursoft"},
         {"艾乌索特","Aiursoft"},
@@ -54,7 +54,7 @@ public class BingTranslator
         }
         var inputSource = new List<Translation>
         {
-            new Translation { Text = input }
+            new() { Text = input }
         };
         var bingResponse = CallTranslateAPI(JsonConvert.SerializeObject(inputSource), targetLanguage);
         var result = JsonConvert.DeserializeObject<List<BingResponse>>(bingResponse) ?? throw new NullReferenceException();

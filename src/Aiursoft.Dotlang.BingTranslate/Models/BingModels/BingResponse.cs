@@ -2,7 +2,7 @@
 
 public class BingResponse
 {
-    public DetectedLanguage DetectedLanguage { get; set; } = new DetectedLanguage();
+    public DetectedLanguage DetectedLanguage { get; set; } = new();
 
     public IReadOnlyCollection<TranslationsItem>? Translations { get; set; }
 }
