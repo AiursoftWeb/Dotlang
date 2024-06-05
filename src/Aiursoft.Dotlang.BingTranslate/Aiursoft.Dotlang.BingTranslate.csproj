@@ -1,24 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <OutputType>Library</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <AssemblyName>Aiursoft.Dotlang.BingTranslate</AssemblyName>
-        <RootNamespace>Aiursoft.Dotlang.BingTranslate</RootNamespace>
-        <IsTestProject>false</IsTestProject>
-        <IsPackable>false</IsPackable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="RestSharp" Version="110.2.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <None Update="Assets\Template.xml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Aiursoft.Dotlang.BingTranslate</AssemblyName>
+    <RootNamespace>Aiursoft.Dotlang.BingTranslate</RootNamespace>
+    <IsTestProject>false</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="RestSharp" Version="111.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Assets\Template.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
