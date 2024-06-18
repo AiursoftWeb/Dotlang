@@ -11,7 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="RestSharp" Version="111.2.0" />
+    <PackageReference Include="RestSharp" Version="111.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj" />
