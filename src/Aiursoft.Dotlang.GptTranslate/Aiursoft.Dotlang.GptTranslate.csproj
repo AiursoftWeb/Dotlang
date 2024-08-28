@@ -2,14 +2,16 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Aiursoft.Dotlang.Core</AssemblyName>
-    <RootNamespace>Aiursoft.Dotlang.Core</RootNamespace>
+    <AssemblyName>Aiursoft.Dotlang.GptTranslate</AssemblyName>
+    <RootNamespace>Aiursoft.Dotlang.GptTranslate</RootNamespace>
     <IsTestProject>false</IsTestProject>
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
   <ItemGroup>
+    <PackageReference Include="RestSharp" Version="111.4.1" />
     <PackageReference Include="Aiursoft.CommandFramework" Version="8.0.4" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />

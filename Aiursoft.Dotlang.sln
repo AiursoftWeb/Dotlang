@@ -7,13 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang", "src\Aiu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.BingTranslate", "src\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj", "{D597828F-B939-4C2E-A4A0-7A0B9335D192}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.Core", "src\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj", "{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E143FC92-6B31-4915-8409-BD6A7AB56083}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{816BD1AD-7C14-40C1-A3F1-87D7D31AEE62}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.Tests", "tests\Aiursoft.Dotlang.Tests\Aiursoft.Dotlang.Tests.csproj", "{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.Dotlang.GptTranslate", "src\Aiursoft.Dotlang.GptTranslate\Aiursoft.Dotlang.GptTranslate.csproj", "{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,14 +29,14 @@ Global
 		{D597828F-B939-4C2E-A4A0-7A0B9335D192}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D597828F-B939-4C2E-A4A0-7A0B9335D192}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D597828F-B939-4C2E-A4A0-7A0B9335D192}.Release|Any CPU.Build.0 = Release|Any CPU
-		{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21}.Release|Any CPU.Build.0 = Release|Any CPU
 		{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -44,8 +44,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F51C9750-5940-4EDF-9A7B-5E417F604484} = {E143FC92-6B31-4915-8409-BD6A7AB56083}
 		{D597828F-B939-4C2E-A4A0-7A0B9335D192} = {E143FC92-6B31-4915-8409-BD6A7AB56083}
-		{02C3F1A9-EDCC-49DC-9DC6-E6195EFBDC21} = {E143FC92-6B31-4915-8409-BD6A7AB56083}
 		{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127} = {816BD1AD-7C14-40C1-A3F1-87D7D31AEE62}
+		{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C} = {E143FC92-6B31-4915-8409-BD6A7AB56083}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CA90704F-CCC5-41D6-B392-FC3174961D0E}

@@ -31,10 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
+    <ProjectReference Include="..\Aiursoft.Dotlang.GptTranslate\Aiursoft.Dotlang.GptTranslate.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="Template.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+
 </Project>

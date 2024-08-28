@@ -12,9 +12,9 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="RestSharp" Version="111.4.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Aiursoft.Dotlang.Core\Aiursoft.Dotlang.Core.csproj" />
+    <PackageReference Include="Aiursoft.CommandFramework" Version="8.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Assets\Template.xml">

@@ -48,13 +48,13 @@ public class TranslateHandler : ExecutableCommandHandlerBuilder
 
     protected override Option[] GetCommandOptions()
     {
-        return new Option[]
-        {
+        return
+        [
             CommonOptionsProvider.VerboseOption,
             CommonOptionsProvider.DryRunOption,
             CommonOptionsProvider.PathOptions,
             _bingApiKey,
             _targetLang
-        };
+        ];
     }
 }
