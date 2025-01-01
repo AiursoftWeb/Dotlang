@@ -12,7 +12,7 @@ This app helps you generate translated `.cshtml` files and `resources` files.
 
 Requirements:
 
-1. [.NET 8 SDK](http://dot.net/)
+1. [.NET 9 SDK](http://dot.net/)
 
 Run the following command to install this tool:
 
