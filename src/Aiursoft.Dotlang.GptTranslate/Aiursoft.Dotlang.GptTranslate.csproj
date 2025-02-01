@@ -10,7 +10,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Aiursoft.CommandFramework" Version="9.0.2" />
+    <PackageReference Include="Aiursoft.CommandFramework" Version="9.0.3" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.1" />
   </ItemGroup>
