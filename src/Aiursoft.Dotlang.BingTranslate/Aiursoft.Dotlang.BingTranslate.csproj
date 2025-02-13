@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="RestSharp" Version="112.1.0" />
-    <PackageReference Include="Aiursoft.CommandFramework" Version="9.0.3" />
+    <PackageReference Include="Aiursoft.CommandFramework" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.2" />
   </ItemGroup>
