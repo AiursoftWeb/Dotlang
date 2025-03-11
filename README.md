@@ -29,33 +29,6 @@ dotnet tool install --global Aiursoft.Dotlang
 
 The Core Translator won't override any existing translation nor resources files. If your content was already surrounded with `@Localizer[""]`, we won't touch it.
 
-## How to run locally
-
-Build:
-
-```bash
-dotnet pack
-```
-
-Install:
-
-```bash
-dotnet tool install --global --add-source ./nupkg dotlang
-```
-
-Run:
-
-```bash
-# In your project folder
-$ dotlang
-```
-
-Uninstall:
-
-```bash
-dotnet tool uninstall -g dotlang
-```
-
 ## Before running the translator
 
 * Follow the document here [ASP.NET Core Localization](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/localization?view=aspnetcore-2.1)
