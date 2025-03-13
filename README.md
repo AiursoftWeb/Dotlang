@@ -8,7 +8,7 @@
 
 This app helps you generate translated `.cshtml` files and `resources` files.
 
-## How to install
+## Installation
 
 Requirements:
 
