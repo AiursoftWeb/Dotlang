@@ -11,6 +11,7 @@ public class Startup : IStartUp
     {
         services.AddScoped<TranslateEngine>();
         services.AddGptClient();
+        services.AddHttpClient();
         services.AddScoped<OllamaBasedTranslatorEngine>();
         services.AddTaskCanon();
     }

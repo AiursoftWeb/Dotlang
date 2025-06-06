@@ -46,10 +46,13 @@ Translated content here...
                 }
             ]
         };
-        return await retryEngine.RunWithRetry(async _ =>
+
+        logger.LogInformation("Calling Ollama to translate... Raw content: {content}, Instance: {instance}, Model: {model}",
+            content, ollamaInstance, ollamaModel);
+        var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, ollamaInstance, ollamaToken, CancellationToken.None);
-            var resultText = result.Choices!.First().Message!.Content!;
+            var resultText = result.GetAnswerPart();
             var resultTextWithoutCodeBlock = resultText.Trim('`', ' ', '\n');
             if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
             {
@@ -59,5 +62,7 @@ Translated content here...
 
             return resultTextWithoutCodeBlock;
         });
+        logger.LogInformation("Ollama translation result: {result}", aiResponseRaw);
+        return aiResponseRaw;
     }
 }
