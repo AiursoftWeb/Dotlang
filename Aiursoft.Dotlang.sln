@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{816BD1AD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.Tests", "tests\Aiursoft.Dotlang.Tests\Aiursoft.Dotlang.Tests.csproj", "{865E6D58-5EF0-4F58-B1ED-CB85B1F9A127}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.Dotlang.GptTranslate", "src\Aiursoft.Dotlang.GptTranslate\Aiursoft.Dotlang.GptTranslate.csproj", "{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aiursoft.Dotlang.OllamaTranslate", "src\Aiursoft.Dotlang.OllamaTranslate\Aiursoft.Dotlang.OllamaTranslate.csproj", "{F3BA406A-58E4-4BB1-8ABD-BFDC38DF4C7C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

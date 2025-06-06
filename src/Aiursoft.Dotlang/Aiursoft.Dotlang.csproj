@@ -31,6 +31,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
-    <ProjectReference Include="..\Aiursoft.Dotlang.GptTranslate\Aiursoft.Dotlang.GptTranslate.csproj" />
+    <ProjectReference Include="..\Aiursoft.Dotlang.OllamaTranslate\Aiursoft.Dotlang.OllamaTranslate.csproj" />
   </ItemGroup>
 </Project>
