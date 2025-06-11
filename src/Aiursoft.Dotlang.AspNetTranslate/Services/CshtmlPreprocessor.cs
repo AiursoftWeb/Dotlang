@@ -120,45 +120,45 @@ public class CshtmlLocalizer
 
         var formatter = new PrettyMarkupFormatter();
 
-        // 2. 分段处理
         foreach (var seg in segments)
         {
             if (seg[0].Type == CshtmlLineType.Razor)
             {
                 // Razor 段，原样输出
                 foreach (var line in seg)
-                {
                     output.AppendLine(line.Raw);
-                }
+                continue;
             }
-            else
+
+            // HTML 段，先检测是不是“顶层结构”标签段
+            var firstTrim = seg[0].Raw.TrimStart();
+            if (Regex.IsMatch(firstTrim, @"^(<!DOCTYPE|</?html|</?head|</?body)\b", RegexOptions.IgnoreCase))
             {
-                // HTML 段：拼成一个完整片段
-                var htmlBlock = string.Join("\n", seg.Select(l => l.Raw));
-
-                // 用一个临时 <div> 容器 ParseFragment
-                var tempDoc = _parser.ParseDocument("<div></div>");
-                var container = tempDoc.QuerySelector("div")!;
-                var fragment = _parser.ParseFragment(htmlBlock, container).ToArray();
-                foreach (var node in fragment)
-                {
-                    container.AppendChild(node);
-                }
-
-                // 规范化空白字符
-                NormalizeWhitespace(container);
-
-                // 本地化文本节点
-                WrapTextNodes(container, keys);
-
-                // 序列化容器子节点（去掉外层 <div>）
-                using var sw = new StringWriter();
-                foreach (var child in container.ChildNodes)
-                {
-                    child.ToHtml(sw, formatter);
-                }
-                output.Append(sw);
+                // 直接原样输出这整个段，并加个空行分隔
+                foreach (var line in seg)
+                    output.AppendLine(line.Raw);
+                output.AppendLine();
+                continue;
             }
+
+            // === 普通 HTML 片段走解析流程 ===
+            var htmlBlock = string.Join("\n", seg.Select(l => l.Raw));
+            var tempDoc = _parser.ParseDocument("<div></div>");
+            var container = tempDoc.QuerySelector("div")!;
+
+            // 解析到 container 下
+            var fragment = _parser.ParseFragment(htmlBlock, container).ToArray();
+            foreach (var node in fragment)
+                container.AppendChild(node);
+
+            NormalizeWhitespace(container);
+            WrapTextNodes(container, keys);
+
+            // 序列化并保持每段末尾换行
+            using var sw = new StringWriter();
+            foreach (var child in container.ChildNodes)
+                child.ToHtml(sw, formatter);
+            output.AppendLine(sw.ToString());
         }
 
         return (output.ToString(), keys.Distinct().ToList());
