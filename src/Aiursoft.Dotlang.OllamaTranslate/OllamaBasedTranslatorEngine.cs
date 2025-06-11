@@ -92,7 +92,7 @@ public class OllamaBasedTranslatorEngine(
         };
 
         logger.LogInformation(
-            "Calling Ollama to translate... Raw content: {content}, Instance: {instance}, Model: {model}",
+            @"Calling Ollama to translate: ""{sourceContent}"", Instance: ""{instance}"", Model: ""{model}""",
             content, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
@@ -107,7 +107,7 @@ public class OllamaBasedTranslatorEngine(
 
             return resultTextWithoutCodeBlock;
         });
-        logger.LogInformation("Ollama translation result: {result}", aiResponseRaw);
+        logger.LogInformation(@"Ollama translation result: ""{result}""", aiResponseRaw);
         return aiResponseRaw;
     }
 
@@ -133,8 +133,8 @@ public class OllamaBasedTranslatorEngine(
             ]
         };
 
-        logger.LogInformation("Calling Ollama to translate... Raw content: {content}, Instance: {instance}, Model: {model}",
-            content, options.Value.OllamaInstance, options.Value.OllamaModel);
+        logger.LogInformation(@"Calling Ollama to translate: ""{word}"", Instance: ""{instance}"", Model: ""{model}""",
+            word, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
@@ -148,7 +148,7 @@ public class OllamaBasedTranslatorEngine(
 
             return resultTextWithoutCodeBlock;
         });
-        logger.LogInformation("Ollama translation result: {result}", aiResponseRaw);
+        logger.LogInformation(@"Ollama translation result of ""{word}"" is ""{result}""", word, aiResponseRaw);
         return aiResponseRaw;
     }
 }

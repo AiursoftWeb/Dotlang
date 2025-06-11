@@ -48,7 +48,7 @@ public class TranslateEntry(
                     if (!textPart.Content.Contains('@') && textPart.StringType == StringType.Text)
                     {
                         // Pure text
-                        logger.LogInformation("Translating text: {Text} in file {File}", textPart.Content, cshtml);
+                        logger.LogInformation(@"Translating text: ""{Text}"" in file: ""{File}""", textPart.Content, cshtml);
                         var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
                             sourceContent: file,
                             word: textPart.Content,
@@ -62,7 +62,7 @@ public class TranslateEntry(
                                 TargetString = translated
                             });
                             textPart.Content = WrapWithTranslateTag(textPart.Content);
-                            logger.LogInformation("Translating text: {Text} to {Translated} in file {File}",
+                            logger.LogInformation(@"Translated text: ""{Text}"" to: ""{Translated}"" in file: ""{File}""",
                                 textPart.Content, translated, cshtml);
                         }
                     }
@@ -73,7 +73,7 @@ public class TranslateEntry(
                         var matched = reg.Matches(textPart.Content);
                         foreach (Match match in matched)
                         {
-                            logger.LogInformation("Translating razor content: {Content} in file {File}", match.Groups[1].Value, cshtml);
+                            logger.LogInformation(@"Translating razor content: ""{Content}"" in file ""{File}""", match.Groups[1].Value, cshtml);
                             var content = match.Groups[1].Value;
                             var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
                                 sourceContent: file,
@@ -87,7 +87,7 @@ public class TranslateEntry(
                                     SourceString = content,
                                     TargetString =translated
                                 });
-                                logger.LogInformation("Translating razor content: {Content} to {Translated} in file {File}",
+                                logger.LogInformation(@"Translated razor content: ""{Content}"" to: ""{Translated}"" in file: ""{File}""",
                                     content, translated, cshtml);
                             }
                         }
