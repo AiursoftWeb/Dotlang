@@ -44,17 +44,16 @@ public class ParsedCshtml
 
             if (razorDepth > 0)
             {
-                // 只要深度 > 0，就一定是 Razor 段
                 isRazor = true;
             }
             else if (trimmed.StartsWith("@{"))
             {
-                // 显式的 @{ … } 代码块起始
                 isRazor = true;
             }
-            else if (SingleAtDirective.IsMatch(trimmed))
+            // 仅当以 @ 开头且不含 HTML 标签，才算单行 Razor 指令
+            else if (SingleAtDirective.IsMatch(trimmed) &&
+                     !Regex.IsMatch(trimmed, @"<\s*[a-z][^>]*>", RegexOptions.Compiled))
             {
-                // 单行 Razor 指令：@using, @inject, @section … 等
                 isRazor = true;
             }
             else
@@ -62,23 +61,18 @@ public class ParsedCshtml
                 isRazor = false;
             }
 
-            // 添加到列表
             list.Add(new CshtmlLine(rawLine, isRazor ? CshtmlLineType.Razor : CshtmlLineType.Html));
 
-            // 更新深度（只有 Razor 段计数）
             if (isRazor)
             {
                 razorDepth += CountBraceDelta(trimmed);
-                // 保证不会降到负数
-                if (razorDepth < 0)
-                {
-                    razorDepth = 0;
-                }
+                if (razorDepth < 0) razorDepth = 0;
             }
         }
 
         Lines = list;
     }
+
 
     /// <summary>
     /// 统计一行里 “{” 的数量减去 “}” 的数量
@@ -124,7 +118,7 @@ public class CshtmlLocalizer
             segments.Add(seg);
         }
 
-        var formatter = new HtmlMarkupFormatter();
+        var formatter = new PrettyMarkupFormatter();
 
         // 2. 分段处理
         foreach (var seg in segments)
