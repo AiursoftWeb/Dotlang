@@ -21,4 +21,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aiursoft.Dotlang.OllamaTranslate\Aiursoft.Dotlang.OllamaTranslate.csproj" />
+  </ItemGroup>
 </Project>

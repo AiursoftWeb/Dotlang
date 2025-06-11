@@ -11,20 +11,22 @@ public class OllamaBasedTranslatorEngine(
     ChatClient chatClient)
 {
     private const string Prompt =
-        @"
-I am a programmer working on a software localization project. I need to localize some files into the target language {LANG}. Unfortunately, I don't understand the {LANG} language or the local culture. Therefore, I need you to act as an experienced translator who can accurately, fluently, and carefully choose words to translate some files I see into the {LANG} language. Please output the translated conclusion and nothing else. Do not output any other content!
+        """
 
-The content you need to translate is:
-```
-{CONTENT}
-```
+        I am a programmer working on a software localization project. I need to localize some files into the target language {LANG}. Unfortunately, I don't understand the {LANG} language or the local culture. Therefore, I need you to act as an experienced translator who can accurately, fluently, and carefully choose words to translate some files I see into the {LANG} language. Please output the translated conclusion and nothing else. Do not output any other content!
 
-Please translate the content into the target language {LANG}. Do **NOT** output any other sentences or content. Only output the translated content and wrap it in three backticks (```), like this:
+        The content you need to translate is:
+        ```
+        {CONTENT}
+        ```
 
-```
-Translated content here...
-```
-";
+        Please translate the content into the target language {LANG}. Do **NOT** output any other sentences or content. Only output the translated content and wrap it in three backticks (```), like this:
+
+        ```
+        Translated content here...
+        ```
+
+        """;
 
     public async Task<string> TranslateAsync(
         string sourceContent,
