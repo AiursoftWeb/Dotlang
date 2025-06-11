@@ -9,7 +9,7 @@ public class Startup : IStartUp
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddScoped<TranslateEngine>();
+        services.AddScoped<FolderFilesTranslateEngine>();
         services.AddGptClient();
         services.AddHttpClient();
         services.AddScoped<OllamaBasedTranslatorEngine>();

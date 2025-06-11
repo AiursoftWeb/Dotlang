@@ -100,7 +100,7 @@ public class AiTranslateHandler : ExecutableCommandHandlerBuilder
             .Build()
             .Services;
 
-        var translateEngine = services.GetRequiredService<TranslateEngine>();
+        var translateEngine = services.GetRequiredService<FolderFilesTranslateEngine>();
 
         var absoluteSourcePath = Path.IsPathRooted(sourcePath)
             ? Path.GetFullPath(sourcePath)

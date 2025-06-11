@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aiursoft.Dotlang.OllamaTranslate;
 
-public class TranslateEngine(ILogger<TranslateEngine> logger, OllamaBasedTranslatorEngine ollamaTranslateEngine)
+public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logger, OllamaBasedTranslatorEngine ollamaTranslateEngine)
 {
     public async Task TranslateAsync(
         string sourceFolder,
