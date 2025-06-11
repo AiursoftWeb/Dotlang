@@ -14,7 +14,6 @@ public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
 {
     public static readonly Dictionary<string, string> SupportedCultures = new()
     {
-        { "en-GB", "English (United Kingdom)" },
         { "zh-CN", "中文 (中国大陆)" },
         { "zh-TW", "中文 (台灣)" },
         { "zh-HK", "中文 (香港)" },
@@ -79,6 +78,7 @@ public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
         hostBuilder.ConfigureServices(services =>
         {
             services.AddTransient<TranslateEntry>();
+            services.AddScoped<CshtmlLocalizer>();
             services.AddTransient<DocumentAnalyser>();
             services.Configure<TranslateOptions>(options =>
             {
