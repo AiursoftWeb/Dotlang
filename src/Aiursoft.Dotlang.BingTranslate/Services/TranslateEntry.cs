@@ -6,34 +6,21 @@ using System.Text.RegularExpressions;
 
 namespace Aiursoft.Dotlang.BingTranslate.Services;
 
-public class TranslateEntry
+public class TranslateEntry(
+    IOptions<TranslateOptions> options,
+    BingTranslator bingTranslator,
+    ILogger<TranslateEntry> logger)
 {
-    private readonly TranslateOptions _options;
-    private readonly BingTranslator _bingTranslator;
-    private readonly DocumentAnalyser _documentAnalyser;
-    private readonly ILogger<TranslateEntry> _logger;
-
-    public TranslateEntry(
-        IOptions<TranslateOptions> options,
-        BingTranslator bingTranslator,
-        DocumentAnalyser documentAnalyser,
-        ILogger<TranslateEntry> logger)
-    {
-        _options = options.Value;
-        _bingTranslator = bingTranslator;
-        _documentAnalyser = documentAnalyser;
-        _logger = logger;
-    }
-
+    private readonly TranslateOptions _options = options.Value;
 
     public async Task StartTranslateAsync(string path, bool shouldTakeAction)
     {
-        _logger.LogInformation("Starting application...");
+        logger.LogInformation("Starting application...");
         var currentDirectory = Directory.GetCurrentDirectory();
         var cshtmls = Directory.GetFileSystemEntries(currentDirectory, "*.cshtml", SearchOption.AllDirectories);
         foreach (var cshtml in cshtmls)
         {
-            _logger.LogInformation("Analysing: {Cshtml}", cshtml);
+            logger.LogInformation("Analysing: {Cshtml}", cshtml);
             var fileName = Path.GetFileName(cshtml);
             if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
             {
@@ -41,10 +28,10 @@ public class TranslateEntry
             }
 
             var file = await File.ReadAllTextAsync(cshtml);
-            var document = _documentAnalyser.AnalyseFile(file);
+            var document = DocumentAnalyser.AnalyseFile(file);
             var xmlResources = new List<TranslatePair>();
-            _logger.LogInformation("Translating: {Cshtml}", cshtml);
-            for (int i = 0; i < document.Count; i++)
+            logger.LogInformation("Translating: {Cshtml}", cshtml);
+            for (var i = 0; i < document.Count; i++)
             {
                 var textPart = document[i];
                 if (textPart.StringType != StringType.Tag && textPart.Content.Trim() != string.Empty)
@@ -57,7 +44,7 @@ public class TranslateEntry
                             xmlResources.Add(new TranslatePair
                             {
                                 SourceString = textPart.Content,
-                                TargetString = _bingTranslator.CallTranslate(textPart.Content, _options.TargetLanguage)
+                                TargetString = bingTranslator.CallTranslate(textPart.Content, _options.TargetLanguage)
                             });
                         }
                         textPart.Content = WrapWithTranslateTag(textPart.Content);
@@ -65,7 +52,7 @@ public class TranslateEntry
                     else
                     {
                         // Text with razor.
-                        var reg = new Regex(@"Localizer\[""(.*?)\""]", RegexOptions.Compiled);
+                        var reg = new Regex("""Localizer\["(.*?)\"]""", RegexOptions.Compiled);
                         var matched = reg.Matches(textPart.Content);
                         foreach (Match match in matched)
                         {
@@ -75,29 +62,34 @@ public class TranslateEntry
                                 xmlResources.Add(new TranslatePair
                                 {
                                     SourceString = content,
-                                    TargetString = _bingTranslator.CallTranslate(content, _options.TargetLanguage)
+                                    TargetString = bingTranslator.CallTranslate(content, _options.TargetLanguage)
                                 });
                             }
                         }
                     }
                 }
-                else if (textPart.StringType == StringType.Tag && textPart.Content.ToLower().Trim().StartsWith("<script"))
+                else switch (textPart.StringType)
                 {
-                    document[i + 1].StringType = StringType.Tag;
-                }
-                else if (textPart.StringType == StringType.Tag && textPart.Content.ToLower().Trim().StartsWith("<link"))
-                {
-                    document[i + 1].StringType = StringType.Tag;
+                    case StringType.Tag when textPart.Content.ToLower().Trim().StartsWith("<script"):
+                    case StringType.Tag when textPart.Content.ToLower().Trim().StartsWith("<link"):
+                        document[i + 1].StringType = StringType.Tag;
+                        break;
+                    case StringType.Razor:
+                    case StringType.Text:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(paramName: nameof(textPart.StringType),
+                            message: $"Unknown string type: {textPart.StringType}");
                 }
             }
-            _logger.LogInformation("Rendering: {Cshtml}", cshtml);
+            logger.LogInformation("Rendering: {Cshtml}", cshtml);
             var translated = RenderCsHtml(document);
             var translatedResources = GenerateXml(xmlResources);
 
 
-            var xmlPosition = cshtml.Replace("\\Views\\", "\\Resources\\Views\\").Replace(".cshtml", $".{_options.TargetLanguage}.resx");
+            var xmlPosition = cshtml.Replace(@"\Views\", @"\Resources\Views\").Replace(".cshtml", $".{_options.TargetLanguage}.resx");
             Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
-            _logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
+            logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
             if (!string.IsNullOrWhiteSpace(translatedResources))
             {
                 await File.WriteAllTextAsync(xmlPosition, translatedResources);
@@ -119,13 +111,13 @@ public class TranslateEntry
                     xmlResources.Add(new TranslatePair
                     {
                         SourceString = stringInCs,
-                        TargetString = _bingTranslator.CallTranslate(stringInCs, _options.TargetLanguage)
+                        TargetString = bingTranslator.CallTranslate(stringInCs, _options.TargetLanguage)
                     });
                 }
                 var translatedResources = GenerateXml(xmlResources);
-                var xmlPosition = csFile.Replace("\\Models\\", "\\Resources\\Models\\").Replace(".cs", $".{_options.TargetLanguage}.resx");
+                var xmlPosition = csFile.Replace(@"\Models\", @"\Resources\Models\").Replace(".cs", $".{_options.TargetLanguage}.resx");
                 Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
-                _logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
+                logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
                 if (!string.IsNullOrWhiteSpace(translatedResources))
                 {
                     await File.WriteAllTextAsync(xmlPosition, translatedResources);
@@ -134,7 +126,7 @@ public class TranslateEntry
         }
     }
 
-    private List<string> GetAllStringsInCs(string fileContent)
+    private static List<string> GetAllStringsInCs(string fileContent)
     {
         var s = new List<string>();
         if (fileContent.Count(t => t == '"') < 2)
@@ -151,7 +143,7 @@ public class TranslateEntry
         return s;
     }
 
-    public static string RenderCsHtml(List<HTMLPart> parts)
+    private static string RenderCsHtml(List<HtmlPart> parts)
     {
         var cshtml = new StringBuilder();
         foreach (var part in parts)
@@ -166,7 +158,7 @@ public class TranslateEntry
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
-    public string WrapWithTranslateTag(string input)
+    private static string WrapWithTranslateTag(string input)
     {
         var toTranslate = input.Trim();
         if (toTranslate.Length == 0)
@@ -182,7 +174,7 @@ public class TranslateEntry
     /// </summary>
     /// <param name="sourceDocument"></param>
     /// <returns></returns>
-    public static string GenerateXml(List<TranslatePair> sourceDocument)
+    private static string GenerateXml(List<TranslatePair> sourceDocument)
     {
         if (sourceDocument.Count == 0)
         {
@@ -197,7 +189,7 @@ public class TranslateEntry
 
         var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "Template.xml");
         var template = File.ReadAllText(templatePath);
-        var translated = template.Replace("{{Content}}", generatedItems.ToString());
+        var translated = template.Replace("{{CONTENT}}", generatedItems.ToString());
         return translated;
     }
 }

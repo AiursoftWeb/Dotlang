@@ -7,14 +7,9 @@ public enum StringType
     Text
 }
 
-public class HTMLPart
+public class HtmlPart(string content)
 {
-    public HTMLPart(string content)
-    {
-        Content = content;
-    }
-
     public StringType StringType { get; set; }
-    public string Content { get; set; }
+    public string Content { get; set; } = content;
     public override string ToString() => Content;
 }
