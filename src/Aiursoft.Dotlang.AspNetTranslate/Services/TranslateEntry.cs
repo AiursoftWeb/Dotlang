@@ -218,7 +218,11 @@ public class TranslateEntry(
                     SourceString = key,
                     TargetString = translated.Trim()
                 });
-                logger.LogInformation("Translated \"{Key}\" → \"{Trans}\"", key, translated);
+                logger.LogInformation(@"Translated: ""{Key}"" → ""{Trans}""", key, translated);
+            }
+            else
+            {
+                logger.LogWarning(@"No translation needed for: ""{Key}"" in: ""{View}""", key, cshtmlPath);
             }
         }
 

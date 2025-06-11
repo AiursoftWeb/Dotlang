@@ -44,6 +44,8 @@ public class OllamaBasedTranslatorEngine(
         {CONTENT}
         ```
 
+        Human names, Nicknames, Proper nouns, symbols, trademarks, etc. must be output as it is and do not translate them! If you don't understand what you want to translate, please output it as it is!
+
         Please translate the content into the target language {LANG}. Do **NOT** output any other sentences or content. Only output the translated content and wrap it in three backticks (```), like this:
 
         ```
@@ -63,6 +65,8 @@ public class OllamaBasedTranslatorEngine(
         ```
         {CONTENT}
         ```
+
+        Human names, Nicknames, Proper nouns, symbols, trademarks, etc. must be output as it is and do not translate them! If you don't understand what you want to translate, please output it as it is!
 
         Please translate only the sentence `{WORD}` into the target language {LANG}. Do **NOT** output any other content. Only output the translated content and wrap it in three backticks (```), like this:
 
