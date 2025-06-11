@@ -6,7 +6,7 @@ using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.CommandFramework.Services;
 using Aiursoft.Dotlang.AspNetTranslate.Services;
-using Aiursoft.Dotlang.BingTranslate;
+using Aiursoft.Dotlang.Shared;
 
 namespace Aiursoft.Dotlang.AspNetTranslate;
 
@@ -78,6 +78,8 @@ public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
         var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
         {
+            services.AddTransient<TranslateEntry>();
+            services.AddTransient<DocumentAnalyser>();
             services.Configure<TranslateOptions>(options =>
             {
                 options.OllamaInstance = context.ParseResult.GetValueForOption(OllamaInstanceOption)!;

@@ -1,7 +1,6 @@
 ﻿using Aiursoft.CommandFramework;
 using Aiursoft.CommandFramework.Models;
-using Aiursoft.Doglang.AspNetTranslate;
-using Aiursoft.Dotlang.BingTranslate;
+using Aiursoft.Dotlang.AspNetTranslate;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.Dotlang.Tests;

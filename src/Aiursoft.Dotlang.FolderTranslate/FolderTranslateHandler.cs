@@ -3,14 +3,15 @@ using System.CommandLine.Invocation;
 using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.CommandFramework.Services;
-using Aiursoft.Dotlang.BingTranslate;
+using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-namespace Aiursoft.Dotlang.OllamaTranslate;
+namespace Aiursoft.Dotlang.FolderTranslate;
 
-public class AiTranslateHandler : ExecutableCommandHandlerBuilder
+public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
 {
-    protected override string Name => "ai-translate";
+    protected override string Name => "folder-translate";
     protected override string Description => "Translate all files in a directory using GPT.";
 
     private static readonly Option<string> SourcePathOptions = new(
@@ -89,19 +90,24 @@ public class AiTranslateHandler : ExecutableCommandHandlerBuilder
         var language = context.ParseResult.GetValueForOption(LanguageOptions)!;
         var recursive = context.ParseResult.GetValueForOption(RecursiveOption);
         var extensions = context.ParseResult.GetValueForOption(ExtensionsOption);
-        var ollamaInstance = context.ParseResult.GetValueForOption(OllamaInstanceOption)!;
-        var ollamaModel = context.ParseResult.GetValueForOption(OllamaModelOption)!;
-        var ollamaToken = context.ParseResult.GetValueForOption(OllamaTokenOption)!;
 
         if (!(extensions?.Any() ?? false))
             throw new ArgumentException("At least one extension should be provided for --extensions.");
 
-        var services = ServiceBuilder
-            .CreateCommandHostBuilder<Startup>(verbose)
-            .Build()
-            .Services;
+        var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
+        hostBuilder.ConfigureServices(services =>
+        {
+            services.AddScoped<FolderFilesTranslateEngine>();
+            services.Configure<TranslateOptions>(options =>
+            {
+                options.OllamaInstance = context.ParseResult.GetValueForOption(OllamaInstanceOption)!;
+                options.OllamaModel = context.ParseResult.GetValueForOption(OllamaModelOption)!;
+                options.OllamaToken = context.ParseResult.GetValueForOption(OllamaTokenOption)!;
+            });
+        });
+        var sp = hostBuilder.Build().Services;
 
-        var translateEngine = services.GetRequiredService<FolderFilesTranslateEngine>();
+        var translateEngine = sp.GetRequiredService<FolderFilesTranslateEngine>();
 
         var absoluteSourcePath = Path.IsPathRooted(sourcePath)
             ? Path.GetFullPath(sourcePath)

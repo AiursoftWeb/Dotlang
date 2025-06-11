@@ -21,6 +21,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Aiursoft.Dotlang.OllamaTranslate\Aiursoft.Dotlang.OllamaTranslate.csproj" />
+    <ProjectReference Include="..\Aiursoft.Dotlang.Shared\Aiursoft.Dotlang.Shared.csproj" />
   </ItemGroup>
 </Project>

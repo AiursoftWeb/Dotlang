@@ -1,4 +1,4 @@
-﻿namespace Aiursoft.Dotlang.BingTranslate
+﻿namespace Aiursoft.Dotlang.Shared
 {
     public class TranslateOptions
     {

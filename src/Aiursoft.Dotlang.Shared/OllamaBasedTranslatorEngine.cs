@@ -1,11 +1,10 @@
 using Aiursoft.Canon;
-using Aiursoft.Dotlang.BingTranslate;
 using Aiursoft.GptClient.Abstractions;
 using Aiursoft.GptClient.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Aiursoft.Dotlang.OllamaTranslate;
+namespace Aiursoft.Dotlang.Shared;
 
 public class CachedTranslateEngine(
     CacheService cache,

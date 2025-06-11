@@ -2,10 +2,9 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Aiursoft.Dotlang.AspNetTranslate.Models;
-using Aiursoft.Dotlang.OllamaTranslate;
+using Aiursoft.Dotlang.Shared;
 
 namespace Aiursoft.Dotlang.AspNetTranslate.Services;
-
 
 public class TranslateEntry(
     CachedTranslateEngine ollamaTranslate,
