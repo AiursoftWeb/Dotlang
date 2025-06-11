@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text;
+using Aiursoft.Canon;
 using Aiursoft.Dotlang.AspNetTranslate.Models;
 using Aiursoft.Dotlang.Shared;
 
 namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 
 public class TranslateEntry(
+    CanonPool canonPool,
     CshtmlLocalizer htmlLocalizer,
     CachedTranslateEngine ollamaTranslate,
     ILogger<TranslateEntry> logger)
@@ -206,25 +208,30 @@ public class TranslateEntry(
         foreach (var key in keys)
         {
             logger.LogInformation("Translating \"{Key}\" in {View}", key, cshtmlPath);
-            var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
-                sourceContent: original,
-                word: key,
-                language: lang);
+            canonPool.RegisterNewTaskToPool(async () =>
+            {
+                var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
+                    sourceContent: original,
+                    word: key,
+                    language: lang);
 
-            if (!string.Equals(key, translated, StringComparison.OrdinalIgnoreCase))
-            {
-                pairs.Add(new TranslatePair
+                if (!string.Equals(key, translated, StringComparison.OrdinalIgnoreCase))
                 {
-                    SourceString = key,
-                    TargetString = translated.Trim()
-                });
-                logger.LogInformation(@"Translated: ""{Key}"" → ""{Trans}""", key, translated);
-            }
-            else
-            {
-                logger.LogWarning(@"No translation needed for: ""{Key}"" in: ""{View}""", key, cshtmlPath);
-            }
+                    pairs.Add(new TranslatePair
+                    {
+                        SourceString = key,
+                        TargetString = translated.Trim()
+                    });
+                    logger.LogInformation(@"Translated: ""{Key}"" → ""{Trans}""", key, translated);
+                }
+                else
+                {
+                    logger.LogWarning(@"No translation needed for: ""{Key}"" in: ""{View}""", key, cshtmlPath);
+                }
+            });
         }
+
+        await canonPool.RunAllTasksInPoolAsync(maxDegreeOfParallelism: 2);
 
         // 4. 生成 .resx 内容
         var xml = GenerateXml(pairs);

@@ -66,9 +66,13 @@ public class OllamaBasedTranslatorEngine(
         {CONTENT}
         ```
 
-        Human names, Nicknames, Proper nouns, symbols, trademarks, etc. must be output as it is and do not translate them! If you don't understand what you want to translate, please output it as it is!
+        Please translate only the sentence or word `{WORD}` in the paragraph into the target language {LANG}.
 
-        Please translate only the sentence `{WORD}` into the target language {LANG}. Do **NOT** output any other content. Only output the translated content and wrap it in three backticks (```), like this:
+        Human names, Nicknames, Proper nouns, symbols, trademarks, etc. must be output as it is and do not translate them! So please consider if the sentence or word `{WORD}` is one of them.
+
+        If you don't understand what you want to translate, please output it as it is!
+
+        Do **NOT** output any other content. Only output the translated content and wrap it in three backticks (```), like this:
 
         ```
         Translated word here...
@@ -101,6 +105,11 @@ public class OllamaBasedTranslatorEngine(
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
             var resultText = result.GetAnswerPart();
+            if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))
+            {
+                throw new InvalidOperationException(
+                    "The translation result is not wrapped in code block. Please check the input content and language.");
+            }
             var resultTextWithoutCodeBlock = resultText.Trim('`', ' ', '\n');
             if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
             {
@@ -109,7 +118,7 @@ public class OllamaBasedTranslatorEngine(
             }
 
             return resultTextWithoutCodeBlock;
-        });
+        }, attempts: 5);
         logger.LogInformation(@"Ollama translation result: ""{result}""", aiResponseRaw);
         return aiResponseRaw;
     }
@@ -142,6 +151,12 @@ public class OllamaBasedTranslatorEngine(
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
             var resultText = result.GetAnswerPart();
+
+            if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))
+            {
+                throw new InvalidOperationException(
+                    "The translation result is not wrapped in code block. Please check the input content and language.");
+            }
             var resultTextWithoutCodeBlock = resultText.Trim('`', ' ', '\n');
             if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
             {
@@ -150,7 +165,7 @@ public class OllamaBasedTranslatorEngine(
             }
 
             return resultTextWithoutCodeBlock;
-        });
+        }, attempts: 5);
         logger.LogInformation(@"Ollama translation result of ""{word}"" is ""{result}""", word, aiResponseRaw);
         return aiResponseRaw;
     }
