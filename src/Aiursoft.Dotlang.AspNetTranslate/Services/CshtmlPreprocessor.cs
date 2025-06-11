@@ -46,6 +46,11 @@ public class ParsedCshtml
             {
                 isRazor = true;
             }
+            else if (trimmed.StartsWith("@Localizer") || trimmed.StartsWith("@Html"))
+            {
+                // This is a hack here. Treat @Localizer and @Html as Html lines to let AngleSharp parse entire HTML part correctly.
+                isRazor = false;
+            }
             else if (trimmed.StartsWith("@{"))
             {
                 isRazor = true;
@@ -79,12 +84,11 @@ public class ParsedCshtml
     /// </summary>
     private static int CountBraceDelta(string line)
     {
-        var opens  = line.Count(c => c == '{');
+        var opens = line.Count(c => c == '{');
         var closes = line.Count(c => c == '}');
         return opens - closes;
     }
 }
-
 
 public class CshtmlLocalizer
 {
@@ -115,6 +119,7 @@ public class CshtmlLocalizer
                     seg = new List<CshtmlLine> { line };
                 }
             }
+
             segments.Add(seg);
         }
 
