@@ -9,10 +9,7 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
         string destinationFolder,
         string language,
         bool recursive,
-        string[] extensions,
-        string ollamaInstance,
-        string ollamaModel,
-        string ollamaToken)
+        string[] extensions)
     {
         logger.LogInformation(
             "Translating files from {sourceFolder} to {lang} and will be saved to {destinationFolder}.", sourceFolder,
@@ -36,10 +33,7 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
             logger.LogInformation("Translating {sourceFile}...", sourceFile);
             var translatedContent = await ollamaTranslateEngine.TranslateAsync(
                 sourceContent,
-                language,
-                ollamaInstance,
-                ollamaModel,
-                ollamaToken);
+                language);
             var destinationFile = sourceFile.Replace(sourceFolder, destinationFolder);
 
             var destinationDirectory = Path.GetDirectoryName(destinationFile);

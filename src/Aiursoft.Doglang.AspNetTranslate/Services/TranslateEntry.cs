@@ -1,23 +1,32 @@
-﻿using Aiursoft.Dotlang.BingTranslate.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.RegularExpressions;
+using Aiursoft.Doglang.AspNetTranslate.Models;
+using Aiursoft.Dotlang.OllamaTranslate;
 
-namespace Aiursoft.Dotlang.BingTranslate.Services;
+namespace Aiursoft.Doglang.AspNetTranslate.Services;
+
 
 public class TranslateEntry(
-    IOptions<TranslateOptions> options,
-    BingTranslator bingTranslator,
+    CachedTranslateEngine ollamaTranslate,
     ILogger<TranslateEntry> logger)
 {
-    private readonly TranslateOptions _options = options.Value;
-
-    public async Task StartTranslateAsync(string path, bool shouldTakeAction)
+    public async Task StartTranslateAsync(string path, string[] langs, bool shouldTakeAction)
     {
-        logger.LogInformation("Starting application...");
-        var currentDirectory = Directory.GetCurrentDirectory();
-        var cshtmls = Directory.GetFileSystemEntries(currentDirectory, "*.cshtml", SearchOption.AllDirectories);
+        foreach (var lang in langs)
+        {
+            logger.LogInformation("Starting translation for language: {Lang}", lang);
+            await StartTranslateAsync(path, lang, shouldTakeAction);
+        }
+    }
+
+    private async Task StartTranslateAsync(string path, string lang, bool shouldTakeAction)
+    {
+        // Expand '~' to home directory
+        path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+
+        logger.LogInformation("Starting translaton on path {path} for language {lang}", path, lang);
+        var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
         foreach (var cshtml in cshtmls)
         {
             logger.LogInformation("Analysing: {Cshtml}", cshtml);
@@ -30,7 +39,7 @@ public class TranslateEntry(
             var file = await File.ReadAllTextAsync(cshtml);
             var document = DocumentAnalyser.AnalyseFile(file);
             var xmlResources = new List<TranslatePair>();
-            logger.LogInformation("Translating: {Cshtml}", cshtml);
+            logger.LogInformation("Translating: {Cshtml} to {Lang}", cshtml, lang);
             for (var i = 0; i < document.Count; i++)
             {
                 var textPart = document[i];
@@ -39,15 +48,23 @@ public class TranslateEntry(
                     if (!textPart.Content.Contains('@') && textPart.StringType == StringType.Text)
                     {
                         // Pure text
-                        if (xmlResources.All(t => t.SourceString?.Trim() != textPart.Content.Trim()))
+                        logger.LogInformation("Translating text: {Text} in file {File}", textPart.Content, cshtml);
+                        var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
+                            sourceContent: file,
+                            word: textPart.Content,
+                            language: lang);
+                        if (translated.Trim() != textPart.Content.Trim() &&
+                            xmlResources.All(t => t.SourceString?.Trim() != textPart.Content.Trim()))
                         {
                             xmlResources.Add(new TranslatePair
                             {
                                 SourceString = textPart.Content,
-                                TargetString = bingTranslator.CallTranslate(textPart.Content, _options.TargetLanguage)
+                                TargetString = translated
                             });
+                            textPart.Content = WrapWithTranslateTag(textPart.Content);
+                            logger.LogInformation("Translating text: {Text} to {Translated} in file {File}",
+                                textPart.Content, translated, cshtml);
                         }
-                        textPart.Content = WrapWithTranslateTag(textPart.Content);
                     }
                     else
                     {
@@ -56,14 +73,22 @@ public class TranslateEntry(
                         var matched = reg.Matches(textPart.Content);
                         foreach (Match match in matched)
                         {
+                            logger.LogInformation("Translating razor content: {Content} in file {File}", match.Groups[1].Value, cshtml);
                             var content = match.Groups[1].Value;
-                            if (xmlResources.All(t => t.SourceString?.Trim() != content.Trim()))
+                            var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
+                                sourceContent: file,
+                                word: content,
+                                language: lang);
+                            if (translated.Trim() != content.Trim() &&
+                                xmlResources.All(t => t.SourceString?.Trim() != content.Trim()))
                             {
                                 xmlResources.Add(new TranslatePair
                                 {
                                     SourceString = content,
-                                    TargetString = bingTranslator.CallTranslate(content, _options.TargetLanguage)
+                                    TargetString =translated
                                 });
+                                logger.LogInformation("Translating razor content: {Content} to {Translated} in file {File}",
+                                    content, translated, cshtml);
                             }
                         }
                     }
@@ -76,6 +101,7 @@ public class TranslateEntry(
                         break;
                     case StringType.Razor:
                     case StringType.Text:
+                    case StringType.Tag:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(paramName: nameof(textPart.StringType),
@@ -83,21 +109,24 @@ public class TranslateEntry(
                 }
             }
             logger.LogInformation("Rendering: {Cshtml}", cshtml);
-            var translated = RenderCsHtml(document);
+            var wrappedCsHtml = RenderCsHtml(document);
             var translatedResources = GenerateXml(xmlResources);
 
-
-            var xmlPosition = cshtml.Replace(@"\Views\", @"\Resources\Views\").Replace(".cshtml", $".{_options.TargetLanguage}.resx");
+            var xmlPosition = cshtml.Replace(@"\Views\", @"\Resources\Views\").Replace(".cshtml", $".{lang}.resx");
             Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
             logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
-            if (!string.IsNullOrWhiteSpace(translatedResources))
+            if (!string.IsNullOrWhiteSpace(translatedResources) && shouldTakeAction)
             {
                 await File.WriteAllTextAsync(xmlPosition, translatedResources);
             }
-            await File.WriteAllTextAsync(cshtml.Replace(".cshtml", ".cshtml"), translated);
+
+            if (shouldTakeAction)
+            {
+                await File.WriteAllTextAsync(cshtml, wrappedCsHtml);
+            }
         }
 
-        var modelsPath = Path.Combine(currentDirectory, "Models");
+        var modelsPath = Path.Combine(path, "Models");
         if (Directory.Exists(modelsPath))
         {
             var csFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
@@ -111,11 +140,14 @@ public class TranslateEntry(
                     xmlResources.Add(new TranslatePair
                     {
                         SourceString = stringInCs,
-                        TargetString = bingTranslator.CallTranslate(stringInCs, _options.TargetLanguage)
+                        TargetString = await ollamaTranslate.TranslateWordInParagraphAsync(
+                            sourceContent: fileContent,
+                            word: stringInCs,
+                            language: lang)
                     });
                 }
                 var translatedResources = GenerateXml(xmlResources);
-                var xmlPosition = csFile.Replace(@"\Models\", @"\Resources\Models\").Replace(".cs", $".{_options.TargetLanguage}.resx");
+                var xmlPosition = csFile.Replace(@"\Models\", @"\Resources\Models\").Replace(".cs", $".{lang}.resx");
                 Directory.CreateDirectory(new FileInfo(xmlPosition).Directory?.FullName ?? throw new NullReferenceException());
                 logger.LogInformation("Writing: {XmlPosition}", xmlPosition);
                 if (!string.IsNullOrWhiteSpace(translatedResources))

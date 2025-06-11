@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang", "src\Aiursoft.Dotlang\Aiursoft.Dotlang.csproj", "{F51C9750-5940-4EDF-9A7B-5E417F604484}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Dotlang.BingTranslate", "src\Aiursoft.Dotlang.BingTranslate\Aiursoft.Dotlang.BingTranslate.csproj", "{D597828F-B939-4C2E-A4A0-7A0B9335D192}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aiursoft.Doglang.AspNetTranslate", "src\Aiursoft.Doglang.AspNetTranslate\Aiursoft.Doglang.AspNetTranslate.csproj", "{D597828F-B939-4C2E-A4A0-7A0B9335D192}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E143FC92-6B31-4915-8409-BD6A7AB56083}"
 EndProject

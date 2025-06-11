@@ -1,4 +1,4 @@
-﻿namespace Aiursoft.Dotlang.BingTranslate.Models.BingModels;
+﻿namespace Aiursoft.Doglang.AspNetTranslate.Models.BingModels;
 
 public class BingResponse
 {

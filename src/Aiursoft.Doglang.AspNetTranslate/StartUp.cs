@@ -1,11 +1,11 @@
 ﻿using Aiursoft.Canon;
 using Aiursoft.CommandFramework.Abstracts;
-using Aiursoft.Dotlang.BingTranslate.Services;
+using Aiursoft.Doglang.AspNetTranslate.Services;
 using Aiursoft.Dotlang.OllamaTranslate;
 using Aiursoft.GptClient;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Aiursoft.Dotlang.BingTranslate;
+namespace Aiursoft.Doglang.AspNetTranslate;
 
 public class StartUp : IStartUp
 {
@@ -15,10 +15,10 @@ public class StartUp : IStartUp
         services.AddHttpClient();
         services.AddTaskCanon();
         services.AddTransient<TranslateEntry>();
-        services.AddTransient<BingTranslator>();
         services.AddTransient<DocumentAnalyser>();
         services.AddScoped<FolderFilesTranslateEngine>();
         services.AddScoped<OllamaBasedTranslatorEngine>();
+        services.AddScoped<CachedTranslateEngine>();
         services.AddGptClient();
     }
 }

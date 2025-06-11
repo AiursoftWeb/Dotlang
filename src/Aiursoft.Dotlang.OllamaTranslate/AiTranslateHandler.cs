@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.CommandFramework.Services;
+using Aiursoft.Dotlang.BingTranslate;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Aiursoft.Dotlang.OllamaTranslate;
@@ -114,9 +115,6 @@ public class AiTranslateHandler : ExecutableCommandHandlerBuilder
             destinationFolder: absoluteDestinationPath,
             language: language,
             recursive: recursive,
-            extensions: extensions,
-            ollamaInstance: ollamaInstance,
-            ollamaModel: ollamaModel,
-            ollamaToken: ollamaToken);
+            extensions: extensions);
     }
 }

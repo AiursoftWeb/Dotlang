@@ -1,4 +1,4 @@
-﻿namespace Aiursoft.Dotlang.BingTranslate.Models;
+﻿namespace Aiursoft.Doglang.AspNetTranslate.Models;
 
 public enum StringType
 {
