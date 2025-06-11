@@ -24,7 +24,7 @@ public class TranslateEntry(
         // Expand '~' to home directory
         path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 
-        logger.LogInformation("Starting translaton on path {path} for language {lang}", path, lang);
+        logger.LogInformation("Starting translation on path {path} for language {lang}", path, lang);
         var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
         foreach (var cshtml in cshtmls)
         {
@@ -217,8 +217,7 @@ public class TranslateEntry(
         {
             generatedItems.AppendLine($"<data name=\"{item.SourceString?.Trim()}\" xml:space=\"preserve\"><value>{item.TargetString?.Trim()}</value></data>\r\n");
         }
-
-        var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "Template.xml");
+        var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Template.xml");
         var template = File.ReadAllText(templatePath);
         var translated = template.Replace("{{CONTENT}}", generatedItems.ToString());
         return translated;
