@@ -1,7 +1,7 @@
 using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace Aiursoft.Dotlang.FolderTranslate;
+namespace Aiursoft.Dotlang.FolderTranslate.Services;
 
 public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logger, OllamaBasedTranslatorEngine ollamaTranslateEngine)
 {

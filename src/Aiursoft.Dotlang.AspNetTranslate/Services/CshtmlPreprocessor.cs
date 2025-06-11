@@ -163,7 +163,7 @@ public class CshtmlLocalizer
                 {
                     child.ToHtml(sw, formatter);
                 }
-                output.Append(sw.ToString());
+                output.Append(sw);
             }
         }
 
@@ -209,7 +209,7 @@ public class CshtmlLocalizer
 
                 keys.Add(trimmed);
                 var newNode = node.Owner?.CreateTextNode($"@Localizer[\"{trimmed}\"]");
-                child.ReplaceWith(newNode);
+                child.ReplaceWith(newNode!);
             }
             else
             {
