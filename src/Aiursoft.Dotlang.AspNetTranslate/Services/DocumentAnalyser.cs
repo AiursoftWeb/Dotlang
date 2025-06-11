@@ -1,6 +1,6 @@
-﻿using Aiursoft.Doglang.AspNetTranslate.Models;
+﻿using Aiursoft.Dotlang.AspNetTranslate.Models;
 
-namespace Aiursoft.Doglang.AspNetTranslate.Services;
+namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 
 public class DocumentAnalyser
 {

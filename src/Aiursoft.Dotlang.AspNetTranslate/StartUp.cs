@@ -1,11 +1,11 @@
 ﻿using Aiursoft.Canon;
 using Aiursoft.CommandFramework.Abstracts;
-using Aiursoft.Doglang.AspNetTranslate.Services;
+using Aiursoft.Dotlang.AspNetTranslate.Services;
 using Aiursoft.Dotlang.OllamaTranslate;
 using Aiursoft.GptClient;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Aiursoft.Doglang.AspNetTranslate;
+namespace Aiursoft.Dotlang.AspNetTranslate;
 
 public class StartUp : IStartUp
 {

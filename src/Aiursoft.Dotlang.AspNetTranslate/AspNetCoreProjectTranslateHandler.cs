@@ -5,10 +5,10 @@ using System.CommandLine.Invocation;
 using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.CommandFramework.Services;
-using Aiursoft.Doglang.AspNetTranslate.Services;
+using Aiursoft.Dotlang.AspNetTranslate.Services;
 using Aiursoft.Dotlang.BingTranslate;
 
-namespace Aiursoft.Doglang.AspNetTranslate;
+namespace Aiursoft.Dotlang.AspNetTranslate;
 
 public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
 {

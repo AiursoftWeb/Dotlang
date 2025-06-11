@@ -1,4 +1,4 @@
-﻿namespace Aiursoft.Doglang.AspNetTranslate.Models.BingModels;
+﻿namespace Aiursoft.Dotlang.AspNetTranslate.Models.BingModels;
 
 public class Translation
 {

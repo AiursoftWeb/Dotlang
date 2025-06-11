@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.RegularExpressions;
-using Aiursoft.Doglang.AspNetTranslate.Models;
+using Aiursoft.Dotlang.AspNetTranslate.Models;
 using Aiursoft.Dotlang.OllamaTranslate;
 
-namespace Aiursoft.Doglang.AspNetTranslate.Services;
+namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 
 
 public class TranslateEntry(

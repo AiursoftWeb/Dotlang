@@ -6,7 +6,7 @@
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Aiursoft.Doglang.AspNetTranslate</PackageId>
+    <PackageId>Aiursoft.Dotlang.AspNetTranslate</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

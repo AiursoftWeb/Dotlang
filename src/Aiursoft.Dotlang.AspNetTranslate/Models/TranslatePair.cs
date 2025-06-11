@@ -1,4 +1,4 @@
-﻿namespace Aiursoft.Doglang.AspNetTranslate.Models;
+﻿namespace Aiursoft.Dotlang.AspNetTranslate.Models;
 
 public class TranslatePair
 {

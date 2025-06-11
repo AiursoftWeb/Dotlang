@@ -1,6 +1,6 @@
 ﻿using Aiursoft.CommandFramework;
 using Aiursoft.CommandFramework.Models;
-using Aiursoft.Doglang.AspNetTranslate;
+using Aiursoft.Dotlang.AspNetTranslate;
 using Aiursoft.Dotlang.OllamaTranslate;
 
 return await new NestedCommandApp()
