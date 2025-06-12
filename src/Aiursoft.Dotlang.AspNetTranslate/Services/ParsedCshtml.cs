@@ -26,7 +26,7 @@ public class ParsedCshtml
                      trimmed.StartsWith("@if") || trimmed.StartsWith("@for") || trimmed.StartsWith("@while") ||
                      trimmed.StartsWith("@switch") || trimmed.StartsWith("@await RenderSection") || trimmed.StartsWith("@RenderLayout"))
             {
-                // This is a hack here. Treat @Localizer and @Html as Html lines to let AngleSharp parse entire HTML part correctly.
+                // This is a hack here. Treat @Localizer and @Html as HTML lines to let AngleSharp parse the entire HTML part correctly.
                 isRazor = false;
             }
             else if (trimmed.StartsWith("@{"))

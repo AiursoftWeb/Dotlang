@@ -24,10 +24,10 @@ public class WrapCodeHandler : ExecutableCommandHandlerBuilder
         var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
         {
-            ServiceCollectionServiceExtensions.AddTransient<TranslateEntry>(services);
-            ServiceCollectionServiceExtensions.AddScoped<CshtmlLocalizer>(services);
-            ServiceCollectionServiceExtensions.AddTransient<DocumentAnalyser>(services);
-            OptionsServiceCollectionExtensions.Configure<TranslateOptions>(services, options =>
+            services.AddTransient<TranslateEntry>();
+            services.AddScoped<CshtmlLocalizer>();
+            services.AddTransient<DocumentAnalyser>();
+            services.Configure<TranslateOptions>(options =>
             {
                 options.OllamaInstance = string.Empty;
                 options.OllamaModel = string.Empty;

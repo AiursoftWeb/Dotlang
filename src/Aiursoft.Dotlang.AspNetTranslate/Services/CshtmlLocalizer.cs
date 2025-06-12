@@ -11,7 +11,7 @@ public class CshtmlLocalizer
     private readonly HtmlParser _parser = new();
     private static readonly Regex SingleAtRegex = new("(?<!@)@(?!@)", RegexOptions.Compiled);
 
-    private static readonly Regex LocalizerRegex = new Regex(
+    private static readonly Regex LocalizerRegex = new(
         @"@Localizer\[\s*""((?:\\.|[^""\\])*)""\s*\]",
         RegexOptions.Compiled
     );
