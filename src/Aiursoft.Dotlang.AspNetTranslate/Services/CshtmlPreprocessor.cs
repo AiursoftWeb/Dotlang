@@ -97,6 +97,24 @@ public class CshtmlLocalizer
     private readonly HtmlParser _parser = new();
     private static readonly Regex SingleAtRegex = new("(?<!@)@(?!@)", RegexOptions.Compiled);
 
+    private static readonly Regex LocalizerRegex =
+        new Regex(@"@Localizer\[""([^""]*)""\]", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Extracts all the keys used in @Localizer["…"] from the given text.
+    /// </summary>
+    public string[] ExtractLocalizerKeys(string input)
+    {
+        if (input == null) throw new ArgumentNullException(nameof(input));
+
+        return LocalizerRegex
+            .Matches(input)
+            .Cast<Match>()
+            .Select(m => m.Groups[1].Value)
+            .Distinct()
+            .ToArray();
+    }
+
     public (string TransformedCshtml, List<string> Keys) Process(string cshtmlContent)
     {
         var parsed = new ParsedCshtml(cshtmlContent);

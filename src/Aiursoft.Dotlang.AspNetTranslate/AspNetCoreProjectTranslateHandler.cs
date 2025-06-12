@@ -64,7 +64,7 @@ public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
         IsRequired = true
     };
 
-    protected override string Name => "translate-aspnet";
+    protected override string Name => "generate-resx";
 
     protected override string Description => "The command to start translation on an ASP.NET Core project.";
 
@@ -93,7 +93,7 @@ public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(lang => lang.Trim())
             .ToArray();
-        return entry.StartTranslateAsync(path, targetLangsArray, !dryRun);
+        return entry.StartLocalizeContentInCsHtmlAsync(path, targetLangsArray, !dryRun);
     }
 
     protected override Option[] GetCommandOptions()
@@ -107,6 +107,46 @@ public class AspNetCoreProjectTranslateHandler : ExecutableCommandHandlerBuilder
             OllamaInstanceOption,
             OllamaModelOption,
             OllamaTokenOption,
+        ];
+    }
+}
+
+public class AspNetCoreProjectWrapHandler : ExecutableCommandHandlerBuilder
+{
+    protected override string Name => "wrap-cshtml";
+
+    protected override string Description => "The command to start wrap the text in cshtml files with translation tags.";
+
+    protected override Task Execute(InvocationContext context)
+    {
+        var verbose = context.ParseResult.GetValueForOption(CommonOptionsProvider.VerboseOption);
+        var dryRun = context.ParseResult.GetValueForOption(CommonOptionsProvider.DryRunOption);
+        var path = context.ParseResult.GetValueForOption(CommonOptionsProvider.PathOptions)!;
+        var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
+        hostBuilder.ConfigureServices(services =>
+        {
+            services.AddTransient<TranslateEntry>();
+            services.AddScoped<CshtmlLocalizer>();
+            services.AddTransient<DocumentAnalyser>();
+            services.Configure<TranslateOptions>(options =>
+            {
+                options.OllamaInstance = string.Empty;
+                options.OllamaModel = string.Empty;
+                options.OllamaToken = string.Empty;
+            });
+        });
+        var sp = hostBuilder.Build().Services;
+        var entry = sp.GetRequiredService<TranslateEntry>();
+        return entry.StartWrapWithLocalizerAsync(path, !dryRun);
+    }
+
+    protected override Option[] GetCommandOptions()
+    {
+        return
+        [
+            CommonOptionsProvider.VerboseOption,
+            CommonOptionsProvider.DryRunOption,
+            CommonOptionsProvider.PathOptions,
         ];
     }
 }

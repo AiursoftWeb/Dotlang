@@ -7,5 +7,6 @@ return await new NestedCommandApp()
     .WithGlobalOptions(CommonOptionsProvider.DryRunOption)
     .WithGlobalOptions(CommonOptionsProvider.VerboseOption)
     .WithFeature(new AspNetCoreProjectTranslateHandler())
+    .WithFeature(new AspNetCoreProjectWrapHandler())
     .WithFeature(new FolderTranslateHandler())
     .RunAsync(args);
