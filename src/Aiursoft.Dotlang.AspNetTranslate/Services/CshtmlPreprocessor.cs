@@ -97,8 +97,11 @@ public class CshtmlLocalizer
     private readonly HtmlParser _parser = new();
     private static readonly Regex SingleAtRegex = new("(?<!@)@(?!@)", RegexOptions.Compiled);
 
-    private static readonly Regex LocalizerRegex =
-        new Regex(@"@Localizer\[""([^""]*)""\]", RegexOptions.Compiled);
+    private static readonly Regex LocalizerRegex = new Regex(
+        @"@Localizer\[\s*""((?:\\.|[^""\\])*)""\s*\]",
+        RegexOptions.Compiled
+    );
+
 
     /// <summary>
     /// Extracts all the keys used in @Localizer["…"] from the given text.
@@ -109,8 +112,8 @@ public class CshtmlLocalizer
 
         return LocalizerRegex
             .Matches(input)
-            .Cast<Match>()
             .Select(m => m.Groups[1].Value)
+            .Select(t => t.Replace(@"\""", "\"")) // 处理转义的引号
             .Distinct()
             .ToArray();
     }

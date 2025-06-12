@@ -68,9 +68,13 @@ public class TranslateEntry(
             return;
         }
 
-        var (processed, _) = htmlLocalizer.Process(original);
+        var (processed, keys) = htmlLocalizer.Process(original);
         if (takeAction)
         {
+            foreach (var key in keys)
+            {
+                logger.LogInformation("Wrapped key: \"{Key}\" in {View}", key, cshtmlPath);
+            }
             await File.WriteAllTextAsync(cshtmlPath, processed);
         }
         else
