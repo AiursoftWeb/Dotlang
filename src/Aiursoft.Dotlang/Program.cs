@@ -6,7 +6,7 @@ using Aiursoft.Dotlang.FolderTranslate;
 return await new NestedCommandApp()
     .WithGlobalOptions(CommonOptionsProvider.DryRunOption)
     .WithGlobalOptions(CommonOptionsProvider.VerboseOption)
-    .WithFeature(new AspNetCoreProjectTranslateHandler())
-    .WithFeature(new AspNetCoreProjectWrapHandler())
+    .WithFeature(new GenerateResxHandler())
+    .WithFeature(new WrapCodeHandler())
     .WithFeature(new FolderTranslateHandler())
     .RunAsync(args);

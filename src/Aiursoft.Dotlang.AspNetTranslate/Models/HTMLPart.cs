@@ -1,12 +1,5 @@
 ﻿namespace Aiursoft.Dotlang.AspNetTranslate.Models;
 
-public enum StringType
-{
-    Tag,
-    Razor,
-    Text
-}
-
 public class HtmlPart(string content)
 {
     public StringType StringType { get; set; }

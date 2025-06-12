@@ -8,7 +8,7 @@ namespace Aiursoft.Dotlang.Tests;
 [TestClass]
 public class IntegrationTests
 {
-    private readonly SingleCommandApp<AspNetCoreProjectTranslateHandler> _program = new SingleCommandApp<AspNetCoreProjectTranslateHandler>()
+    private readonly SingleCommandApp<GenerateResxHandler> _program = new SingleCommandApp<GenerateResxHandler>()
         .WithDefaultOption(CommonOptionsProvider.PathOptions);
 
     [TestMethod]
