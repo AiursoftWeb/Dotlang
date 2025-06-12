@@ -75,6 +75,7 @@ public class TranslateEntry(
             {
                 logger.LogInformation("Wrapped key: \"{Key}\" in {View}", key, cshtmlPath);
             }
+
             await File.WriteAllTextAsync(cshtmlPath, processed);
         }
         else
@@ -141,22 +142,16 @@ public class TranslateEntry(
                     word: key,
                     language: lang);
                 var trimmed = translated.Trim();
-                if (!string.Equals(key, trimmed, StringComparison.OrdinalIgnoreCase))
+                lock (newPairs)
                 {
-                    lock (newPairs)
+                    newPairs.Add(new TranslatePair
                     {
-                        newPairs.Add(new TranslatePair
-                        {
-                            SourceString = key,
-                            TargetString = trimmed
-                        });
-                    }
-                    logger.LogInformation("Translated: \"{Key}\" → \"{Trans}\"", key, trimmed);
+                        SourceString = key,
+                        TargetString = trimmed
+                    });
                 }
-                else
-                {
-                    logger.LogWarning("No translation needed for: \"{Key}\"", key);
-                }
+
+                logger.LogInformation("Translated: \"{Key}\" → \"{Trans}\"", key, trimmed);
             });
         }
 
