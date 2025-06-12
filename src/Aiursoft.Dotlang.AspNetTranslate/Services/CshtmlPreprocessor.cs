@@ -35,7 +35,7 @@ public class ParsedCshtml
     public ParsedCshtml(string cshtmlContent)
     {
         var list = new List<CshtmlLine>();
-        int razorDepth = 0;
+        var razorDepth = 0;
 
         foreach (var rawLine in cshtmlContent.Split('\n'))
         {
@@ -46,7 +46,9 @@ public class ParsedCshtml
             {
                 isRazor = true;
             }
-            else if (trimmed.StartsWith("@Localizer") || trimmed.StartsWith("@Html"))
+            else if (trimmed.StartsWith("@Localizer") || trimmed.StartsWith("@Html") || trimmed.StartsWith("@foreach") ||
+                     trimmed.StartsWith("@if") || trimmed.StartsWith("@for") || trimmed.StartsWith("@while") ||
+                     trimmed.StartsWith("@switch") || trimmed.StartsWith("@await RenderSection") || trimmed.StartsWith("@RenderLayout"))
             {
                 // This is a hack here. Treat @Localizer and @Html as Html lines to let AngleSharp parse entire HTML part correctly.
                 isRazor = false;
@@ -106,7 +108,7 @@ public class CshtmlLocalizer
         if (parsed.Lines.Count > 0)
         {
             var seg = new List<CshtmlLine> { parsed.Lines[0] };
-            for (int i = 1; i < parsed.Lines.Count; i++)
+            for (var i = 1; i < parsed.Lines.Count; i++)
             {
                 var line = parsed.Lines[i];
                 if (line.Type == seg[0].Type)
