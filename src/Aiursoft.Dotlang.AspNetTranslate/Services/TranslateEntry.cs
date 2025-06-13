@@ -102,7 +102,6 @@ public class TranslateEntry(
 
         // 1) extract all Localizer-wrapped keys
         var keys = htmlLocalizer.ExtractLocalizerKeys(original)
-            .Select(k => k.Trim())
             .Where(k => k.Length > 0)
             .Distinct()
             .ToList();
@@ -160,7 +159,7 @@ public class TranslateEntry(
         // 6) merge in the new translations and rewrite the .resx
         foreach (var pair in newPairs)
         {
-            existing[pair.SourceString!.Trim()] = pair.TargetString!.Trim();
+            existing[pair.SourceString] = pair.TargetString.Trim();
         }
 
         var xml = GenerateXml(existing);

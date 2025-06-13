@@ -2,6 +2,6 @@
 
 public class TranslatePair
 {
-    public string? SourceString { get; set; }
-    public string? TargetString { get; set; }
+    public required string SourceString { get; init; }
+    public required string TargetString { get; init; }
 }
