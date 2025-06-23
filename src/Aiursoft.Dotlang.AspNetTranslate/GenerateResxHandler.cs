@@ -116,6 +116,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
             OllamaInstanceOption,
             OllamaModelOption,
             OllamaTokenOption,
+            ConcurrentRequestsOption
         ];
     }
 }
