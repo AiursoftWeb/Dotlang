@@ -12,7 +12,7 @@ namespace Aiursoft.Dotlang.AspNetTranslate;
 
 public class GenerateResxHandler : ExecutableCommandHandlerBuilder
 {
-    public static readonly Dictionary<string, string> SupportedCultures = new()
+    private static readonly Dictionary<string, string> SupportedCultures = new()
     {
         { "zh-CN", "中文 (中国大陆)" },
         { "zh-TW", "中文 (台灣)" },
@@ -32,7 +32,12 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         { "nl-NL", "Nederlands (Nederland)" },
         { "sv-SE", "Svenska (Sverige)" },
         { "pl-PL", "Polski (Polska)" },
-        { "tr-TR", "Türkçe (Türkiye)" }
+        { "tr-TR", "Türkçe (Türkiye)" },
+        { "uk-UA", "Українська (Україна)" },
+        { "id-ID", "Bahasa Indonesia (Indonesia)" },
+        { "fi-FI", "Suomi (Suomi)" },
+        { "hi-IN", "हिन्दी (भारत)" },
+        { "el-GR", "Ελληνικά (Ελλάδα)" }
     };
 
     private readonly Option<string> TargetLangs = new(
