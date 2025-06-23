@@ -33,7 +33,7 @@ public class TranslateEntry(
         }
     }
 
-    public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction)
+    public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction, int concurentRequests)
     {
         foreach (var lang in langs)
         {
@@ -47,7 +47,7 @@ public class TranslateEntry(
                     continue;
 
                 logger.LogInformation("Localizing content in CSHTML file: {Cshtml}", cshtml);
-                await LocalizeContentInCsHtml(cshtml, lang, takeAction);
+                await LocalizeContentInCsHtml(cshtml, lang, takeAction, concurentRequests);
             }
         }
     }
@@ -84,7 +84,7 @@ public class TranslateEntry(
         }
     }
 
-    private async Task LocalizeContentInCsHtml(string cshtmlPath, string lang, bool takeAction)
+    private async Task LocalizeContentInCsHtml(string cshtmlPath, string lang, bool takeAction, int concurentRequests)
     {
         if (!File.Exists(cshtmlPath))
         {
@@ -154,7 +154,7 @@ public class TranslateEntry(
             });
         }
 
-        await canonPool.RunAllTasksInPoolAsync(maxDegreeOfParallelism: 16);
+        await canonPool.RunAllTasksInPoolAsync(maxDegreeOfParallelism: concurentRequests);
 
         // 6) merge in the new translations and rewrite the .resx
         foreach (var pair in newPairs)

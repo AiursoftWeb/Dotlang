@@ -35,7 +35,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         { "tr-TR", "Türkçe (Türkiye)" }
     };
 
-    private readonly Option<string> _targetLangs = new(
+    private readonly Option<string> TargetLangs = new(
         aliases: ["--languages", "-l"],
         getDefaultValue: () => string.Join(",", SupportedCultures.Keys),
         description: "The target languages code. Connect with ','. For example: zh_CN,en_US,ja_JP")
@@ -64,6 +64,14 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         IsRequired = true
     };
 
+    private static readonly Option<int> ConcurrentRequestsOption = new(
+        ["--concurrent-requests", "-c"],
+        getDefaultValue: () => 1,
+        "The max concurrent requests to Ollama.")
+    {
+        IsRequired = true
+    };
+
     protected override string Name => "generate-resx";
 
     protected override string Description => "The command to start translation on an ASP.NET Core project.";
@@ -73,7 +81,8 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         var verbose = context.ParseResult.GetValueForOption(CommonOptionsProvider.VerboseOption);
         var dryRun = context.ParseResult.GetValueForOption(CommonOptionsProvider.DryRunOption);
         var path = context.ParseResult.GetValueForOption(CommonOptionsProvider.PathOptions)!;
-        var targetLangs = context.ParseResult.GetValueForOption(_targetLangs)!;
+        var targetLangs = context.ParseResult.GetValueForOption(TargetLangs)!;
+        var concurrentRequests = context.ParseResult.GetValueForOption(ConcurrentRequestsOption);
         var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
         {
@@ -93,7 +102,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(lang => lang.Trim())
             .ToArray();
-        return entry.StartLocalizeContentInCsHtmlAsync(path, targetLangsArray, !dryRun);
+        return entry.StartLocalizeContentInCsHtmlAsync(path, targetLangsArray, !dryRun, concurrentRequests);
     }
 
     protected override Option[] GetCommandOptions()
@@ -103,7 +112,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
             CommonOptionsProvider.VerboseOption,
             CommonOptionsProvider.DryRunOption,
             CommonOptionsProvider.PathOptions,
-            _targetLangs,
+            TargetLangs,
             OllamaInstanceOption,
             OllamaModelOption,
             OllamaTokenOption,
