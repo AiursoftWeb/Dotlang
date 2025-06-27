@@ -33,6 +33,8 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         { "sv-SE", "Svenska (Sverige)" },
         { "pl-PL", "Polski (Polska)" },
         { "tr-TR", "Türkçe (Türkiye)" },
+        { "ro-RO", "Română (România)" },
+        { "da-DK", "Dansk (Danmark)" },
         { "uk-UA", "Українська (Україна)" },
         { "id-ID", "Bahasa Indonesia (Indonesia)" },
         { "fi-FI", "Suomi (Suomi)" },
