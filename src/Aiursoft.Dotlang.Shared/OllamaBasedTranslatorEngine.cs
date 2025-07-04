@@ -63,7 +63,7 @@ public class OllamaBasedTranslatorEngine(
         string language)
     {
         var message = Prompt.Replace("{CONTENT}", sourceContent).Replace("{LANG}", language);
-        var content = new OpenAiModel
+        var content = new OpenAiRequestModel
         {
             Model = options.Value.OllamaModel,
             Messages =
@@ -110,7 +110,7 @@ public class OllamaBasedTranslatorEngine(
             .Replace("{CONTENT}", sourceContent)
             .Replace("{LANG}", language)
             .Replace("{WORD}", word);
-        var content = new OpenAiModel
+        var content = new OpenAiRequestModel
         {
             Model = options.Value.OllamaModel,
             Messages =
