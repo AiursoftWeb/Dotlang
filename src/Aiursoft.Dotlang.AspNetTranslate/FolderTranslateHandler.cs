@@ -3,7 +3,7 @@ using System.CommandLine.Invocation;
 using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.CommandFramework.Services;
-using Aiursoft.Dotlang.FolderTranslate.Services;
+using Aiursoft.Dotlang.AspNetTranslate.Services;
 using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

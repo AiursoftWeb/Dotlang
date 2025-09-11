@@ -1,7 +1,6 @@
 ﻿using Aiursoft.Canon;
 using Aiursoft.CommandFramework.Abstracts;
 using Aiursoft.Dotlang.AspNetTranslate.Services;
-using Aiursoft.Dotlang.FolderTranslate.Services;
 using Aiursoft.Dotlang.Shared;
 using Aiursoft.GptClient;
 using Microsoft.Extensions.DependencyInjection;
