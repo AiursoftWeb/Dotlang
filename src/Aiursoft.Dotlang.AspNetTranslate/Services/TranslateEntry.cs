@@ -9,30 +9,13 @@ using Aiursoft.Dotlang.Shared;
 namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 
 public class TranslateEntry(
+    CSharpKeyExtractor keyExtractor,
     CanonPool canonPool,
     CshtmlLocalizer htmlLocalizer,
     CachedTranslateEngine ollamaTranslate,
     ILogger<TranslateEntry> logger)
 {
     private readonly string _sep = Path.DirectorySeparatorChar.ToString();
-
-    public async Task StartWrapWithLocalizerAsync(string path, bool takeAction)
-    {
-        path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-
-        logger.LogInformation("Wrapping with Localizer on path {path}", path);
-        var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
-        foreach (var cshtml in cshtmls)
-        {
-            var fileName = Path.GetFileName(cshtml);
-            if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
-                continue;
-
-            logger.LogInformation("Wrapping file with Localizer: {Cshtml}", cshtml);
-            await WrapWithLocalizerAsync(cshtml, takeAction);
-        }
-    }
-
     public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction, int concurentRequests)
     {
         foreach (var lang in langs)
@@ -52,36 +35,103 @@ public class TranslateEntry(
         }
     }
 
-    private async Task WrapWithLocalizerAsync(string cshtmlPath, bool takeAction)
+    public async Task StartLocalizeContentInCSharpAsync(string path, string[] langs, bool takeAction, int concurrentRequests)
     {
-        if (!File.Exists(cshtmlPath))
+        foreach (var lang in langs)
         {
-            logger.LogWarning("File not found: {CshtmlPath}", cshtmlPath);
+            path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            logger.LogInformation("Starting localization in C# for language: {Lang}", lang);
+            var csharpFiles = Directory.GetFileSystemEntries(path, "*.cs", SearchOption.AllDirectories);
+            foreach (var csFile in csharpFiles)
+            {
+                if (csFile.EndsWith(".Designer.cs") ||
+                    csFile.Contains($"{_sep}obj{_sep}") ||
+                    csFile.Contains($"{_sep}bin{_sep}"))
+                {
+                    continue;
+                }
+
+                logger.LogInformation("Localizing content in C# file: {CsFile}", csFile);
+                await LocalizeContentInCSharp(path, csFile, lang, takeAction, concurrentRequests);
+            }
+        }
+    }
+
+    private async Task LocalizeContentInCSharp(string projectPath, string csPath, string lang, bool takeAction, int concurrentRequests)
+    {
+        if (!File.Exists(csPath))
+        {
+            logger.LogWarning("File not found: {CsPath}", csPath);
             return;
         }
 
-        // Read the original content
-        var original = await File.ReadAllTextAsync(cshtmlPath);
+        var original = await File.ReadAllTextAsync(csPath);
         if (string.IsNullOrWhiteSpace(original))
         {
-            logger.LogWarning("File is empty: {CshtmlPath}", cshtmlPath);
+            logger.LogWarning("File is empty: {CsPath}", csPath);
             return;
         }
 
-        var (processed, keys) = htmlLocalizer.Process(original);
-        if (takeAction)
-        {
-            foreach (var key in keys)
-            {
-                logger.LogInformation("Wrapped key: \"{Key}\" in {View}", key, cshtmlPath);
-            }
+        // 1) Extract all Localizer-wrapped keys using CSharpKeyExtractor
+        var keys = keyExtractor.ExtractLocalizerKeys(original);
+        logger.LogTrace("Extracted {Count} keys from {File}: {Keys}", keys.Count, csPath, string.Join(", ", keys));
 
-            await File.WriteAllTextAsync(cshtmlPath, processed);
-        }
-        else
+        // 2) Figure out where the .resx should live
+        var relativePath = Path.GetRelativePath(projectPath, csPath);
+        var resourcePath = Path.Combine(projectPath, "Resources", relativePath);
+        var xmlPath = Path.ChangeExtension(resourcePath, $".{lang}.resx");
+        Directory.CreateDirectory(Path.GetDirectoryName(xmlPath)!);
+        logger.LogTrace("Resx path: {Resx}", xmlPath);
+
+        // 3) Load what’s already been translated
+        var existing = await GetResxContentsAsync(xmlPath);
+
+        // 4) Find keys that aren’t yet in the .resx
+        var missingKeys = keys
+            .Where(k => !existing.ContainsKey(k))
+            .ToList();
+        logger.LogTrace("Missing keys: {Count} in {Resx}", missingKeys.Count, xmlPath);
+
+        if (!takeAction || missingKeys.Count == 0)
         {
-            logger.LogInformation("No new injection needed for: {View}", cshtmlPath);
+            logger.LogInformation("No new localization needed for: {File}", csPath);
+            return;
         }
+
+        // 5) Translate each missing key
+        var newPairs = new List<TranslatePair>();
+        foreach (var key in missingKeys)
+        {
+            logger.LogInformation("Translating: \"{Key}\"", key);
+            canonPool.RegisterNewTaskToPool(async () =>
+            {
+                var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
+                    sourceContent: original,
+                    word: key,
+                    language: lang);
+                var trimmed = translated.Trim();
+                lock (newPairs)
+                {
+                    newPairs.Add(new TranslatePair
+                    {
+                        SourceString = key,
+                        TargetString = trimmed
+                    });
+                }
+                logger.LogInformation("Translated: \"{Key}\" → \"{Trans}\"", key, trimmed);
+            });
+        }
+        await canonPool.RunAllTasksInPoolAsync(maxDegreeOfParallelism: concurrentRequests);
+
+        // 6) Merge in the new translations and rewrite the .resx
+        foreach (var pair in newPairs)
+        {
+            existing[pair.SourceString] = pair.TargetString.Trim();
+        }
+
+        var xml = GenerateXml(existing);
+        await File.WriteAllTextAsync(xmlPath, xml);
+        logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 
     private async Task LocalizeContentInCsHtml(string cshtmlPath, string lang, bool takeAction, int concurentRequests)
@@ -230,8 +280,58 @@ public class TranslateEntry(
                 $"  <data name=\"{safeKey}\" xml:space=\"preserve\">\n    <value>{SecurityElement.Escape(kv.Value)}</value>\n  </data>");
         }
 
+
         var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Template.xml");
         var template = File.ReadAllText(templatePath);
         return template.Replace("{{CONTENT}}", sb.ToString());
+    }
+
+    public async Task StartWrapWithLocalizerAsync(string path, bool takeAction)
+    {
+        path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+
+        logger.LogInformation("Wrapping with Localizer on path {path}", path);
+        var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
+        foreach (var cshtml in cshtmls)
+        {
+            var fileName = Path.GetFileName(cshtml);
+            if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
+                continue;
+
+            logger.LogInformation("Wrapping file with Localizer: {Cshtml}", cshtml);
+            await WrapWithLocalizerAsync(cshtml, takeAction);
+        }
+    }
+
+    private async Task WrapWithLocalizerAsync(string cshtmlPath, bool takeAction)
+    {
+        if (!File.Exists(cshtmlPath))
+        {
+            logger.LogWarning("File not found: {CshtmlPath}", cshtmlPath);
+            return;
+        }
+
+        // Read the original content
+        var original = await File.ReadAllTextAsync(cshtmlPath);
+        if (string.IsNullOrWhiteSpace(original))
+        {
+            logger.LogWarning("File is empty: {CshtmlPath}", cshtmlPath);
+            return;
+        }
+
+        var (processed, keys) = htmlLocalizer.Process(original);
+        if (takeAction)
+        {
+            foreach (var key in keys)
+            {
+                logger.LogInformation("Wrapped key: \"{Key}\" in {View}", key, cshtmlPath);
+            }
+
+            await File.WriteAllTextAsync(cshtmlPath, processed);
+        }
+        else
+        {
+            logger.LogInformation("No new injection needed for: {View}", cshtmlPath);
+        }
     }
 }

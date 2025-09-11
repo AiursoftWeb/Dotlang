@@ -1,7 +1,6 @@
 ﻿using Aiursoft.CommandFramework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.Dotlang.AspNetTranslate;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.Dotlang.Tests;
 

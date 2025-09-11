@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.CommandLine;
 using System.CommandLine.Invocation;
@@ -10,42 +10,11 @@ using Aiursoft.Dotlang.Shared;
 
 namespace Aiursoft.Dotlang.AspNetTranslate;
 
-public class GenerateResxHandler : ExecutableCommandHandlerBuilder
+public class GenerateResxForCsharpHandler : ExecutableCommandHandlerBuilder
 {
-    public static readonly Dictionary<string, string> SupportedCultures = new()
-    {
-        { "en-GB", "English (United Kingdom)" },
-        { "zh-CN", "中文 (中国大陆)" },
-        { "zh-TW", "中文 (台灣)" },
-        { "zh-HK", "中文 (香港)" },
-        { "ja-JP", "日本語 (日本)" },
-        { "ko-KR", "한국어 (대한민국)" },
-        { "vi-VN", "Tiếng Việt (Việt Nam)" },
-        { "th-TH", "ภาษาไทย (ประเทศไทย)" },
-        { "de-DE", "Deutsch (Deutschland)" },
-        { "fr-FR", "Français (France)" },
-        { "es-ES", "Español (España)" },
-        { "ru-RU", "Русский (Россия)" },
-        { "it-IT", "Italiano (Italia)" },
-        { "pt-PT", "Português (Portugal)" },
-        { "pt-BR", "Português (Brasil)" },
-        { "ar-SA", "العربية (المملكة العربية السعودية)" },
-        { "nl-NL", "Nederlands (Nederland)" },
-        { "sv-SE", "Svenska (Sverige)" },
-        { "pl-PL", "Polski (Polska)" },
-        { "tr-TR", "Türkçe (Türkiye)" },
-        { "ro-RO", "Română (România)" },
-        { "da-DK", "Dansk (Danmark)" },
-        { "uk-UA", "Українська (Україна)" },
-        { "id-ID", "Bahasa Indonesia (Indonesia)" },
-        { "fi-FI", "Suomi (Suomi)" },
-        { "hi-IN", "हिन्दी (भारत)" },
-        { "el-GR", "Ελληνικά (Ελλάδα)" }
-    };
-
     private readonly Option<string> TargetLangs = new(
         aliases: ["--languages", "-l"],
-        getDefaultValue: () => string.Join(",", SupportedCultures.Keys),
+        getDefaultValue: () => string.Join(",", GenerateResxHandler.SupportedCultures.Keys),
         description: "The target languages code. Connect with ','. For example: zh-CN,en-US,ja-JP")
     {
         IsRequired = true
@@ -80,9 +49,9 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         IsRequired = true
     };
 
-    protected override string Name => "generate-resx";
+    protected override string Name => "generate-resx-csharp";
 
-    protected override string Description => "The command to start translation on an ASP.NET Core project.";
+    protected override string Description => "The command to start translation for C# files in a .NET project.";
 
     protected override Task Execute(InvocationContext context)
     {
@@ -96,6 +65,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         {
             services.AddTransient<TranslateEntry>();
             services.AddScoped<CshtmlLocalizer>();
+            services.AddScoped<CSharpKeyExtractor>(); // For C# files
             services.AddTransient<DocumentAnalyser>();
             services.Configure<TranslateOptions>(options =>
             {
@@ -110,7 +80,9 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(lang => lang.Trim())
             .ToArray();
-        return entry.StartLocalizeContentInCsHtmlAsync(path, targetLangsArray, !dryRun, concurrentRequests);
+
+        // Calling the new method for C# files. This method does not exist yet.
+        return entry.StartLocalizeContentInCSharpAsync(path, targetLangsArray, !dryRun, concurrentRequests);
     }
 
     protected override Option[] GetCommandOptions()
