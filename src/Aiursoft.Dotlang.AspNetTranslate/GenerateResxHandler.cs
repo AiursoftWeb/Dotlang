@@ -14,6 +14,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
 {
     private static readonly Dictionary<string, string> SupportedCultures = new()
     {
+        { "en-GB", "English (United Kingdom)" },
         { "zh-CN", "中文 (中国大陆)" },
         { "zh-TW", "中文 (台灣)" },
         { "zh-HK", "中文 (香港)" },
@@ -45,7 +46,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
     private readonly Option<string> TargetLangs = new(
         aliases: ["--languages", "-l"],
         getDefaultValue: () => string.Join(",", SupportedCultures.Keys),
-        description: "The target languages code. Connect with ','. For example: zh_CN,en_US,ja_JP")
+        description: "The target languages code. Connect with ','. For example: zh-CN,en-US,ja-JP")
     {
         IsRequired = true
     };

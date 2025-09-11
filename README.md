@@ -44,6 +44,14 @@ Options:
   -?, -h, --help                          Show help and usage information
 ```
 
+For example:
+
+```bash
+dotlang generate-resx --path . --model "deepseek-chat" --token "your-deepseek-token" --instance "https://api.deepseek.com/chat/completions"
+```
+
+Will help you generate `.resx` files for all the `.cshtml` files in the current folder.
+
 ## Run locally
 
 Requirements about how to run
