@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Version>9.0.35</Version>
+    <Version>9.0.36</Version>
     <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>dotlang</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang</RootNamespace>

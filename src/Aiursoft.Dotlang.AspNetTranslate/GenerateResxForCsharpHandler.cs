@@ -63,10 +63,6 @@ public class GenerateResxForCsharpHandler : ExecutableCommandHandlerBuilder
         var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
         {
-            services.AddTransient<TranslateEntry>();
-            services.AddScoped<CshtmlLocalizer>();
-            services.AddScoped<CSharpKeyExtractor>(); // For C# files
-            services.AddTransient<DocumentAnalyser>();
             services.Configure<TranslateOptions>(options =>
             {
                 options.OllamaInstance = context.ParseResult.GetValueForOption(OllamaInstanceOption)!;
