@@ -96,6 +96,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         {
             services.AddTransient<TranslateEntry>();
             services.AddScoped<CshtmlLocalizer>();
+            services.AddScoped<CSharpKeyExtractor>();
             services.AddTransient<DocumentAnalyser>();
             services.Configure<TranslateOptions>(options =>
             {

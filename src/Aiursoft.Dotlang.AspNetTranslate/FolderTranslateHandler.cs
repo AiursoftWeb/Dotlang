@@ -8,7 +8,7 @@ using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Aiursoft.Dotlang.FolderTranslate;
+namespace Aiursoft.Dotlang.AspNetTranslate;
 
 public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
 {
@@ -98,7 +98,6 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
         var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
         {
-            services.AddScoped<FolderFilesTranslateEngine>();
             services.Configure<TranslateOptions>(options =>
             {
                 options.OllamaInstance = context.ParseResult.GetValueForOption(OllamaInstanceOption)!;
