@@ -7,6 +7,7 @@ return await new NestedCommandApp()
     .WithGlobalOptions(CommonOptionsProvider.VerboseOption)
     .WithFeature(new GenerateResxHandler())
     .WithFeature(new GenerateResxForCsharpHandler())
+    .WithFeature(new GenerateResxForDataAnnotationsHandler())
     .WithFeature(new WrapCodeHandler())
     .WithFeature(new FolderTranslateHandler())
     .RunAsync(args);

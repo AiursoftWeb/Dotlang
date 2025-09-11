@@ -9,6 +9,7 @@ using Aiursoft.Dotlang.Shared;
 namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 
 public class TranslateEntry(
+    DataAnnotationKeyExtractor dataAnnotationKeyExtractor,
     CSharpKeyExtractor keyExtractor,
     CanonPool canonPool,
     CshtmlLocalizer htmlLocalizer,
@@ -16,7 +17,9 @@ public class TranslateEntry(
     ILogger<TranslateEntry> logger)
 {
     private readonly string _sep = Path.DirectorySeparatorChar.ToString();
-    public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction, int concurentRequests)
+
+    public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction,
+        int concurentRequests)
     {
         foreach (var lang in langs)
         {
@@ -35,7 +38,8 @@ public class TranslateEntry(
         }
     }
 
-    public async Task StartLocalizeContentInCSharpAsync(string path, string[] langs, bool takeAction, int concurrentRequests)
+    public async Task StartLocalizeContentInCSharpAsync(string path, string[] langs, bool takeAction,
+        int concurrentRequests)
     {
         foreach (var lang in langs)
         {
@@ -57,7 +61,8 @@ public class TranslateEntry(
         }
     }
 
-    private async Task LocalizeContentInCSharp(string projectPath, string csPath, string lang, bool takeAction, int concurrentRequests)
+    private async Task LocalizeContentInCSharp(string projectPath, string csPath, string lang, bool takeAction,
+        int concurrentRequests)
     {
         if (!File.Exists(csPath))
         {
@@ -118,9 +123,11 @@ public class TranslateEntry(
                         TargetString = trimmed
                     });
                 }
+
                 logger.LogInformation("Translated: \"{Key}\" → \"{Trans}\"", key, trimmed);
             });
         }
+
         await canonPool.RunAllTasksInPoolAsync(maxDegreeOfParallelism: concurrentRequests);
 
         // 6) Merge in the new translations and rewrite the .resx
@@ -333,5 +340,109 @@ public class TranslateEntry(
         {
             logger.LogInformation("No new injection needed for: {View}", cshtmlPath);
         }
+    }
+
+    public async Task StartLocalizeDataAnnotationsAsync(string path, string[] langs, bool takeAction,
+        int concurrentRequests)
+    {
+        foreach (var lang in langs)
+        {
+            path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            logger.LogInformation("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
+            var csharpFiles = Directory.GetFileSystemEntries(path, "*.cs", SearchOption.AllDirectories);
+            foreach (var csFile in csharpFiles)
+            {
+                if (csFile.EndsWith(".Designer.cs") ||
+                    csFile.Contains($"{_sep}obj{_sep}") ||
+                    csFile.Contains($"{_sep}bin{_sep}"))
+                {
+                    continue;
+                }
+
+                logger.LogInformation("Localizing DataAnnotations in C# file: {CsFile}", csFile);
+                await LocalizeContentForDataAnnotationAsync(path, csFile, lang, takeAction, concurrentRequests);
+            }
+        }
+    }
+
+    private async Task LocalizeContentForDataAnnotationAsync(string projectPath, string csPath, string lang,
+        bool takeAction, int concurrentRequests)
+    {
+        if (!File.Exists(csPath))
+        {
+            logger.LogWarning("File not found: {CsPath}", csPath);
+            return;
+        }
+
+        var original = await File.ReadAllTextAsync(csPath);
+        if (string.IsNullOrWhiteSpace(original))
+        {
+            logger.LogWarning("File is empty: {CsPath}", csPath);
+            return;
+        }
+
+        // 1) Extract all DataAnnotation keys using DataAnnotationKeyExtractor
+        var keys = dataAnnotationKeyExtractor.ExtractKeys(original);
+        logger.LogTrace("Extracted {Count} DataAnnotation keys from {File}: {Keys}", keys.Count, csPath,
+            string.Join(", ", keys));
+
+        // 2) Figure out where the .resx should live
+        var relativePath = Path.GetRelativePath(projectPath, csPath);
+        var resourcePath = Path.Combine(projectPath, "Resources", relativePath);
+        var xmlPath = Path.ChangeExtension(resourcePath, $".{lang}.resx");
+        Directory.CreateDirectory(Path.GetDirectoryName(xmlPath)!);
+        logger.LogTrace("Resx path: {Resx}", xmlPath);
+
+        // 3) Load what’s already been translated
+        var existing = await GetResxContentsAsync(xmlPath);
+
+        // 4) Find keys that aren’t yet in the .resx
+        var missingKeys = keys
+            .Where(k => !existing.ContainsKey(k))
+            .ToList();
+        logger.LogTrace("Missing keys: {Count} in {Resx}", missingKeys.Count, xmlPath);
+
+        if (!takeAction || missingKeys.Count == 0)
+        {
+            logger.LogInformation("No new localization needed for: {File}", csPath);
+            return;
+        }
+
+        // 5) Translate each missing key
+        var newPairs = new List<TranslatePair>();
+        foreach (var key in missingKeys)
+        {
+            logger.LogInformation("Translating: \"{Key}\"", key);
+            canonPool.RegisterNewTaskToPool(async () =>
+            {
+                var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
+                    sourceContent: original,
+                    word: key,
+                    language: lang);
+                var trimmed = translated.Trim();
+                lock (newPairs)
+                {
+                    newPairs.Add(new TranslatePair
+                    {
+                        SourceString = key,
+                        TargetString = trimmed
+                    });
+                }
+
+                logger.LogInformation("Translated: \"{Key}\" → \"{Trans}\"", key, trimmed);
+            });
+        }
+
+        await canonPool.RunAllTasksInPoolAsync(maxDegreeOfParallelism: concurrentRequests);
+
+        // 6) Merge in the new translations and rewrite the .resx
+        foreach (var pair in newPairs)
+        {
+            existing[pair.SourceString] = pair.TargetString.Trim();
+        }
+
+        var xml = GenerateXml(existing);
+        await File.WriteAllTextAsync(xmlPath, xml);
+        logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 }

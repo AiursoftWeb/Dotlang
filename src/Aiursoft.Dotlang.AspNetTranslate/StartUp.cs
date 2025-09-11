@@ -11,6 +11,8 @@ public class StartUp : IStartUp
 {
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddScoped<DataAnnotationKeyExtractor>();
+        services.AddTransient<DocumentAnalyser>();
         services.AddScoped<FolderFilesTranslateEngine>();
         services.AddTransient<TranslateEntry>();
         services.AddScoped<CshtmlLocalizer>();
