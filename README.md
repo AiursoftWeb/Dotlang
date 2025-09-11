@@ -44,10 +44,14 @@ Options:
   -?, -h, --help                          Show help and usage information
 ```
 
-For example:
+For example, if you want to localize entire project with `deepseek`, you can run:
 
 ```bash
-dotlang generate-resx --path . --model "deepseek-chat" --token "your-deepseek-token" --instance "https://api.deepseek.com/chat/completions"
+DEEPSEEK_API_KEY="sk-aaaaaaaa"
+dotlang generate-resx-csharp      --path . --model "deepseek-chat" --token $DEEPSEEK_API_KEY --instance "https://api.deepseek.com/chat/completions"
+dotlang generate-resx-view        --path . --model "deepseek-chat" --token $DEEPSEEK_API_KEY --instance "https://api.deepseek.com/chat/completions"
+dotlang generate-resx-annotations --path . --model "deepseek-chat" --token $DEEPSEEK_API_KEY --instance "https://api.deepseek.com/chat/completions"
+
 ```
 
 Will help you generate `.resx` files for all the `.cshtml` files in the current folder.

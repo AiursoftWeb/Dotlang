@@ -5,7 +5,7 @@ using Aiursoft.Dotlang.AspNetTranslate;
 return await new NestedCommandApp()
     .WithGlobalOptions(CommonOptionsProvider.DryRunOption)
     .WithGlobalOptions(CommonOptionsProvider.VerboseOption)
-    .WithFeature(new GenerateResxHandler())
+    .WithFeature(new GenerateResxForViewsHandler())
     .WithFeature(new GenerateResxForCsharpHandler())
     .WithFeature(new GenerateResxForDataAnnotationsHandler())
     .WithFeature(new WrapCodeHandler())

@@ -7,7 +7,7 @@ namespace Aiursoft.Dotlang.Tests;
 [TestClass]
 public class IntegrationTests
 {
-    private readonly SingleCommandApp<GenerateResxHandler> _program = new SingleCommandApp<GenerateResxHandler>()
+    private readonly SingleCommandApp<GenerateResxForViewsHandler> _program = new SingleCommandApp<GenerateResxForViewsHandler>()
         .WithDefaultOption(CommonOptionsProvider.PathOptions);
 
     [TestMethod]

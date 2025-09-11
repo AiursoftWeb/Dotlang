@@ -10,7 +10,7 @@ using Aiursoft.Dotlang.Shared;
 
 namespace Aiursoft.Dotlang.AspNetTranslate;
 
-public class GenerateResxHandler : ExecutableCommandHandlerBuilder
+public class GenerateResxForViewsHandler : ExecutableCommandHandlerBuilder
 {
     public static readonly Dictionary<string, string> SupportedCultures = new()
     {
@@ -80,7 +80,7 @@ public class GenerateResxHandler : ExecutableCommandHandlerBuilder
         IsRequired = true
     };
 
-    protected override string Name => "generate-resx";
+    protected override string Name => "generate-resx-view";
 
     protected override string Description => "The command to start translation on an ASP.NET Core project.";
 
