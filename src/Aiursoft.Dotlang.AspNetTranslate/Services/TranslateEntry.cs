@@ -349,7 +349,8 @@ public class TranslateEntry(
         {
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             logger.LogInformation("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
-            var csharpFiles = Directory.GetFileSystemEntries(path, "*.cs", SearchOption.AllDirectories);
+            var modelsPath = Path.Combine(path, "Models");
+            var csharpFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
             foreach (var csFile in csharpFiles)
             {
                 if (csFile.EndsWith(".Designer.cs") ||
