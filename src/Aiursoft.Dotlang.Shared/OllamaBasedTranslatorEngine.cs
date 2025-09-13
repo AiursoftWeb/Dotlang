@@ -123,8 +123,8 @@ public class OllamaBasedTranslatorEngine(
             ]
         };
 
-        logger.LogInformation(@"Calling Ollama to translate: ""{word}"", Instance: ""{instance}"", Model: ""{model}""",
-            word, options.Value.OllamaInstance, options.Value.OllamaModel);
+        logger.LogInformation(@"Calling Ollama to translate: ""{word}"" to ""{lang}"", Instance: ""{instance}"", Model: ""{model}""",
+            word, language, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
