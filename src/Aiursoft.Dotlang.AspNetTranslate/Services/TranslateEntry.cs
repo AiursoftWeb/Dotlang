@@ -18,9 +18,23 @@ public class TranslateEntry(
 {
     private readonly string _sep = Path.DirectorySeparatorChar.ToString();
 
+    private void EnsureCsprojFileExistsAsync(string path, bool force)
+    {
+        var files = Directory.GetFiles(path, "*.csproj", SearchOption.TopDirectoryOnly);
+        if (files.Length == 0)
+        {
+            logger.LogWarning("No csproj file found in path: {Path}", path);
+            if (!force)
+            {
+                throw new InvalidOperationException($"No csproj file found in path: '{path}'. This might be a mistake. Please change directory to the project root and try again.");
+            }
+        }
+    }
+
     public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction,
         int concurentRequests)
     {
+        EnsureCsprojFileExistsAsync(path, false);
         foreach (var lang in langs)
         {
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
@@ -41,6 +55,7 @@ public class TranslateEntry(
     public async Task StartLocalizeContentInCSharpAsync(string path, string[] langs, bool takeAction,
         int concurrentRequests)
     {
+        EnsureCsprojFileExistsAsync(path, false);
         foreach (var lang in langs)
         {
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
@@ -57,6 +72,31 @@ public class TranslateEntry(
 
                 logger.LogInformation("Localizing content in C# file: {CsFile}", csFile);
                 await LocalizeContentInCSharp(path, csFile, lang, takeAction, concurrentRequests);
+            }
+        }
+    }
+
+    public async Task StartLocalizeDataAnnotationsAsync(string path, string[] langs, bool takeAction,
+        int concurrentRequests)
+    {
+        EnsureCsprojFileExistsAsync(path, false);
+        foreach (var lang in langs)
+        {
+            path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            logger.LogInformation("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
+            var modelsPath = Path.Combine(path, "Models");
+            var csharpFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
+            foreach (var csFile in csharpFiles)
+            {
+                if (csFile.EndsWith(".Designer.cs") ||
+                    csFile.Contains($"{_sep}obj{_sep}") ||
+                    csFile.Contains($"{_sep}bin{_sep}"))
+                {
+                    continue;
+                }
+
+                logger.LogInformation("Localizing DataAnnotations in C# file: {CsFile}", csFile);
+                await LocalizeContentForDataAnnotationAsync(path, csFile, lang, takeAction, concurrentRequests);
             }
         }
     }
@@ -339,30 +379,6 @@ public class TranslateEntry(
         else
         {
             logger.LogInformation("No new injection needed for: {View}", cshtmlPath);
-        }
-    }
-
-    public async Task StartLocalizeDataAnnotationsAsync(string path, string[] langs, bool takeAction,
-        int concurrentRequests)
-    {
-        foreach (var lang in langs)
-        {
-            path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            logger.LogInformation("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
-            var modelsPath = Path.Combine(path, "Models");
-            var csharpFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
-            foreach (var csFile in csharpFiles)
-            {
-                if (csFile.EndsWith(".Designer.cs") ||
-                    csFile.Contains($"{_sep}obj{_sep}") ||
-                    csFile.Contains($"{_sep}bin{_sep}"))
-                {
-                    continue;
-                }
-
-                logger.LogInformation("Localizing DataAnnotations in C# file: {CsFile}", csFile);
-                await LocalizeContentForDataAnnotationAsync(path, csFile, lang, takeAction, concurrentRequests);
-            }
         }
     }
 
