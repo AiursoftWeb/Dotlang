@@ -4,7 +4,7 @@
 [![Pipeline stat](https://gitlab.aiursoft.com/aiursoft/dotlang/badges/master/pipeline.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/pipelines)
 [![Test Coverage](https://gitlab.aiursoft.com/aiursoft/dotlang/badges/master/coverage.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/pipelines)
 [![NuGet version (Aiursoft.DotLang)](https://img.shields.io/nuget/v/Aiursoft.Dotlang.svg)](https://www.nuget.org/packages/Aiursoft.Dotlang/)
-[![ManHours](https://manhours.aiursoft.cn/r/gitlab.aiursoft.com/aiursoft/dotlang.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/commits/master?ref_type=heads)
+[![ManHours](https://manhours.aiursoft.com/r/gitlab.aiursoft.com/aiursoft/dotlang.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/commits/master?ref_type=heads)
 
 This app helps you generate translated `.cshtml` files and `resources` files. Based on the [Ollama](https://ollama.com/) AI model, it translates the content inside `@Localizer[""]` tags in your ASP.NET Core project.
 
