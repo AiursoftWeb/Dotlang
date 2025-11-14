@@ -12,7 +12,7 @@ This app helps you generate translated `.cshtml` files and `resources` files. Ba
 
 Requirements:
 
-1. [.NET 9 SDK](http://dot.net/)
+1. [.NET 10 SDK](http://dot.net/)
 
 Run the following command to install this tool:
 
@@ -60,7 +60,7 @@ Will help you generate `.resx` files for all the `.cshtml` files in the current 
 
 Requirements about how to run
 
-1. [.NET 9 SDK](http://dot.net/)
+1. [.NET 10 SDK](http://dot.net/)
 2. Ollama.
 2. Execute `dotnet run` to run the app
 

@@ -2,6 +2,8 @@
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.Dotlang.AspNetTranslate;
 
+[assembly:DoNotParallelize]
+
 namespace Aiursoft.Dotlang.Tests;
 
 [TestClass]

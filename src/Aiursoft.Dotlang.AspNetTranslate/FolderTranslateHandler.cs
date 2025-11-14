@@ -1,5 +1,4 @@
 ﻿using System.CommandLine;
-using System.CommandLine.Invocation;
 using Aiursoft.CommandFramework.Framework;
 using Aiursoft.CommandFramework.Models;
 using Aiursoft.CommandFramework.Services;
@@ -16,55 +15,64 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
     protected override string Description => "Translate all files in a directory using GPT.";
 
     private static readonly Option<string> SourcePathOptions = new(
-        ["--source", "-s"],
-        "Path of the folder to translate files.")
+        name: "--source",
+        aliases: ["-s"])
     {
-        IsRequired = true
+        Description = "Path of the folder to translate files.",
+        Required = true
     };
 
     private static readonly Option<string> DestinationPathOptions = new(
-        ["--destination", "-d"],
-        "Path of the folder to save translated files.")
+        name: "--destination",
+        aliases: ["-d"])
     {
-        IsRequired = true
+        Description = "Path of the folder to save translated files.",
+        Required = true
     };
 
     private static readonly Option<string> LanguageOptions = new(
-        ["--language", "-l"],
-        "The target language code. For example: zh_CN, en_US, ja_JP")
+        name: "--language",
+        aliases: ["-l"])
     {
-        IsRequired = true
+        Description = "The target language code. For example: zh_CN, en_US, ja_JP",
+        Required = true
     };
 
     private static readonly Option<bool> RecursiveOption = new(
-        ["--recursive", "-r"],
-        () => false,
-        "Recursively search for files in subdirectories.");
+        name: "--recursive",
+        aliases: ["-r"])
+    {
+        DefaultValueFactory = _ => false,
+        Description = "Recursively search for files in subdirectories."
+    };
 
     private static readonly Option<string[]> ExtensionsOption = new(
-        ["--extensions", "-e"],
-        () => ["html"],
-        "Extensions of files to translate.");
+        name: "--extensions",
+        aliases: ["-e"])
+    {
+        DefaultValueFactory = _ => ["html"],
+        Description = "Extensions of files to translate."
+    };
 
     private static readonly Option<string> OllamaInstanceOption = new(
-        ["--instance"],
-        "The Ollama instance to use.")
+        name: "--instance")
     {
-        IsRequired = true
+        Description = "The Ollama instance to use.",
+        Required = true
     };
 
     private static readonly Option<string> OllamaModelOption = new(
-        ["--model"],
-        "The Ollama model to use.")
+        name: "--model")
     {
-        IsRequired = true
+        Description = "The Ollama model to use.",
+        Required = true
     };
 
     private static readonly Option<string> OllamaTokenOption = new(
-        ["--token"],
-        "The Ollama token to use.")
+        name: "--token")
     {
-        IsRequired = true
+        Description = "The Ollama token to use.",
+        Required = true
     };
 
     protected override IEnumerable<Option> GetCommandOptions()
@@ -83,14 +91,14 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
         ];
     }
 
-    protected override async Task Execute(InvocationContext context)
+    protected override async Task Execute(ParseResult context)
     {
-        var verbose = context.ParseResult.GetValueForOption(CommonOptionsProvider.VerboseOption);
-        var sourcePath = context.ParseResult.GetValueForOption(SourcePathOptions)!;
-        var destinationPath = context.ParseResult.GetValueForOption(DestinationPathOptions)!;
-        var language = context.ParseResult.GetValueForOption(LanguageOptions)!;
-        var recursive = context.ParseResult.GetValueForOption(RecursiveOption);
-        var extensions = context.ParseResult.GetValueForOption(ExtensionsOption);
+        var verbose = context.GetValue(CommonOptionsProvider.VerboseOption);
+        var sourcePath = context.GetValue(SourcePathOptions)!;
+        var destinationPath = context.GetValue(DestinationPathOptions)!;
+        var language = context.GetValue(LanguageOptions)!;
+        var recursive = context.GetValue(RecursiveOption);
+        var extensions = context.GetValue(ExtensionsOption);
 
         if (!(extensions?.Any() ?? false))
             throw new ArgumentException("At least one extension should be provided for --extensions.");
@@ -100,9 +108,9 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
         {
             services.Configure<TranslateOptions>(options =>
             {
-                options.OllamaInstance = context.ParseResult.GetValueForOption(OllamaInstanceOption)!;
-                options.OllamaModel = context.ParseResult.GetValueForOption(OllamaModelOption)!;
-                options.OllamaToken = context.ParseResult.GetValueForOption(OllamaTokenOption)!;
+                options.OllamaInstance = context.GetValue(OllamaInstanceOption)!;
+                options.OllamaModel = context.GetValue(OllamaModelOption)!;
+                options.OllamaToken = context.GetValue(OllamaTokenOption)!;
             });
         });
         var sp = hostBuilder.Build().Services;
