@@ -1,18 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <Version>10.0.1</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Aiursoft.Dotlang.AspNetTranslate</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang.AspNetTranslate</RootNamespace>
     <IsTestProject>false</IsTestProject>
-    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Company>Aiursoft</Company>
+    <Product>AspNetTranslate</Product>
+    <Description>Nuget package of 'AspNetTranslate' provided by Aiursoft</Description>
     <PackageId>Aiursoft.Dotlang.AspNetTranslate</PackageId>
+    <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>ssh://git@gitlab.aiursoft.com:2202/aiursoft/dotlang</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>ssh://git@gitlab.aiursoft.com:2202/aiursoft/dotlang.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="1.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
   <ItemGroup>
     <None Update="Assets\Template.xml">
