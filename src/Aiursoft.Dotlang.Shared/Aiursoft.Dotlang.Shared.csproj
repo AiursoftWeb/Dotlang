@@ -16,9 +16,9 @@
     <PackageId>Aiursoft.Dotlang.Shared</PackageId>
     <PackageTags>nuget package dotnet csproj dependencies</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>ssh://git@gitlab.aiursoft.com:2202/aiursoft/dotlang</PackageProjectUrl>
+    <PackageProjectUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>ssh://git@gitlab.aiursoft.com:2202/aiursoft/dotlang.git</RepositoryUrl>
+    <RepositoryUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
