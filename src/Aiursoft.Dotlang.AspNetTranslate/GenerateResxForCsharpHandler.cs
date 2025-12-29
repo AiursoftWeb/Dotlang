@@ -15,7 +15,7 @@ public class GenerateResxForCsharpHandler : ExecutableCommandHandlerBuilder
         name: "--languages",
         aliases: ["-l"])
     {
-        DefaultValueFactory = _ => string.Join(",", GenerateResxForViewsHandler.SupportedCultures.Keys),
+        DefaultValueFactory = _ => string.Join(",", LanguageMetadata.SupportedCultures.Keys),
         Description = "The target languages code. Connect with ','. For example: zh-CN,en-US,ja-JP",
         Required = true
     };

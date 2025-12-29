@@ -62,7 +62,10 @@ public class OllamaBasedTranslatorEngine(
         string sourceContent,
         string language)
     {
-        var message = Prompt.Replace("{CONTENT}", sourceContent).Replace("{LANG}", language);
+        var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName) 
+            ? $"{language}, {fullName}" 
+            : language;
+        var message = Prompt.Replace("{CONTENT}", sourceContent).Replace("{LANG}", targetLanguage);
         var content = new OpenAiRequestModel
         {
             Model = options.Value.OllamaModel,
@@ -106,9 +109,12 @@ public class OllamaBasedTranslatorEngine(
         string word,
         string language)
     {
+        var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName) 
+            ? $"{language}, {fullName}" 
+            : language;
         var message = PromptWord
             .Replace("{CONTENT}", sourceContent)
-            .Replace("{LANG}", language)
+            .Replace("{LANG}", targetLanguage)
             .Replace("{WORD}", word);
         var content = new OpenAiRequestModel
         {
