@@ -51,7 +51,15 @@ DEEPSEEK_API_KEY="sk-aaaaaaaa"
 dotlang generate-resx-csharp      --path . --model "deepseek-chat" --token $DEEPSEEK_API_KEY --instance "https://api.deepseek.com/chat/completions" -c 8
 dotlang generate-resx-view        --path . --model "deepseek-chat" --token $DEEPSEEK_API_KEY --instance "https://api.deepseek.com/chat/completions" -c 8
 dotlang generate-resx-annotations --path . --model "deepseek-chat" --token $DEEPSEEK_API_KEY --instance "https://api.deepseek.com/chat/completions" -c 8
+```
 
+For example, if you want to localize entire project with Aiursoft Ollama server, you can run:
+
+```bash
+OLLAMA_API_KEY="CONFIDENTIAL"
+dotlang generate-resx-csharp      --path . --model "qwen3:30b-a3b-thinking-2507-q8_0" --token $OLLAMA_API_KEY --instance "https://ollama.aiursoft.com/api/chat/completions" -c 8
+dotlang generate-resx-view        --path . --model "qwen3:30b-a3b-thinking-2507-q8_0" --token $OLLAMA_API_KEY --instance "https://ollama.aiursoft.com/api/chat/completions" -c 8
+dotlang generate-resx-annotations --path . --model "qwen3:30b-a3b-thinking-2507-q8_0" --token $OLLAMA_API_KEY --instance "https://ollama.aiursoft.com/api/chat/completions" -c 8
 ```
 
 Will help you generate `.resx` files for all the `.cshtml` files in the current folder.
