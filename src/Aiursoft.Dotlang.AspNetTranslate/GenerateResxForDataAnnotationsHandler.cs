@@ -11,11 +11,11 @@ namespace Aiursoft.Dotlang.AspNetTranslate;
 
 public class GenerateResxForDataAnnotationsHandler : ExecutableCommandHandlerBuilder
 {
-    private readonly Option<string> _targetLangs = new(
+    private readonly Option<string> TargetLangs = new(
         name: "--languages",
         aliases: ["-l"])
     {
-        DefaultValueFactory = _ => string.Join(",", GenerateResxForViewsHandler.SupportedCultures.Keys),
+        DefaultValueFactory = _ => string.Join(",", LanguageMetadata.SupportedCultures.Keys),
         Description = "The target languages code. Connect with ','. For example: zh-CN,en-US,ja-JP",
         Required = true
     };
@@ -59,7 +59,7 @@ public class GenerateResxForDataAnnotationsHandler : ExecutableCommandHandlerBui
         var verbose = context.GetValue(CommonOptionsProvider.VerboseOption);
         var dryRun = context.GetValue(CommonOptionsProvider.DryRunOption);
         var path = context.GetValue(CommonOptionsProvider.PathOptions)!;
-        var targetLangs = context.GetValue(_targetLangs)!;
+        var targetLangs = context.GetValue(TargetLangs)!;
         var concurrentRequests = context.GetValue(ConcurrentRequestsOption);
         var hostBuilder = ServiceBuilder.CreateCommandHostBuilder<StartUp>(verbose);
         hostBuilder.ConfigureServices(services =>
@@ -89,7 +89,7 @@ public class GenerateResxForDataAnnotationsHandler : ExecutableCommandHandlerBui
             CommonOptionsProvider.VerboseOption,
             CommonOptionsProvider.DryRunOption,
             CommonOptionsProvider.PathOptions,
-            _targetLangs,
+            TargetLangs,
             OllamaInstanceOption,
             OllamaModelOption,
             OllamaTokenOption,
