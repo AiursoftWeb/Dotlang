@@ -7,7 +7,7 @@ public class CachedTranslateEngine(
     CacheService cache,
     OllamaBasedTranslatorEngine engine)
 {
-    public async Task<string> TranslateWordInParagraphAsync(
+    public virtual async Task<string> TranslateWordInParagraphAsync(
         string sourceContent,
         string word,
         string language)

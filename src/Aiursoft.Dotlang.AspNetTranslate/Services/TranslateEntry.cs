@@ -38,7 +38,7 @@ public class TranslateEntry(
         foreach (var lang in langs)
         {
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            logger.LogInformation("Starting localization in CSHTML for language: {Lang}", lang);
+            logger.LogTrace("Starting localization in CSHTML for language: {Lang}", lang);
             var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
             foreach (var cshtml in cshtmls)
             {
@@ -46,7 +46,7 @@ public class TranslateEntry(
                 if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
                     continue;
 
-                logger.LogInformation("Localizing content in CSHTML file: {Cshtml}", cshtml);
+                logger.LogTrace("Localizing content in CSHTML file: {Cshtml}", cshtml);
                 await LocalizeContentInCsHtml(cshtml, lang, takeAction, concurentRequests);
             }
         }
@@ -59,7 +59,7 @@ public class TranslateEntry(
         foreach (var lang in langs)
         {
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            logger.LogInformation("Starting localization in C# for language: {Lang}", lang);
+            logger.LogTrace("Starting localization in C# for language: {Lang}", lang);
             var csharpFiles = Directory.GetFileSystemEntries(path, "*.cs", SearchOption.AllDirectories);
             foreach (var csFile in csharpFiles)
             {
@@ -70,7 +70,7 @@ public class TranslateEntry(
                     continue;
                 }
 
-                logger.LogInformation("Localizing content in C# file: {CsFile}", csFile);
+                logger.LogTrace("Localizing content in C# file: {CsFile}", csFile);
                 await LocalizeContentInCSharp(path, csFile, lang, takeAction, concurrentRequests);
             }
         }
@@ -83,7 +83,7 @@ public class TranslateEntry(
         foreach (var lang in langs)
         {
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            logger.LogInformation("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
+            logger.LogTrace("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
             var modelsPath = Path.Combine(path, "Models");
             var csharpFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
             foreach (var csFile in csharpFiles)
@@ -95,10 +95,39 @@ public class TranslateEntry(
                     continue;
                 }
 
-                logger.LogInformation("Localizing DataAnnotations in C# file: {CsFile}", csFile);
+                logger.LogTrace("Localizing DataAnnotations in C# file: {CsFile}", csFile);
                 await LocalizeContentForDataAnnotationAsync(path, csFile, lang, takeAction, concurrentRequests);
             }
         }
+    }
+
+    private List<string> DeduplicateKeys(IEnumerable<string> rawKeys, string filePath)
+    {
+        var uniqueKeys = new List<string>();
+        // Key: lowercased/normalized key for collision check
+        // Value: the actual accepted key with original casing
+        var seen = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var k in rawKeys)
+        {
+            if (string.IsNullOrWhiteSpace(k)) continue;
+
+            if (seen.TryGetValue(k, out var existingKey))
+            {
+                // If we have seen this key (case-insensitive), check if it's the exact same string
+                if (!existingKey.Equals(k, StringComparison.Ordinal))
+                {
+                    logger.LogWarning("Key conflict detected in {File}: '{New}' ignored in favor of '{Existing}'",
+                        filePath, k, existingKey);
+                }
+                // If it is the exact same string, it's just a normal duplicate reference, ignore silently
+                continue;
+            }
+
+            seen[k] = k;
+            uniqueKeys.Add(k);
+        }
+        return uniqueKeys;
     }
 
     private async Task LocalizeContentInCSharp(string projectPath, string csPath, string lang, bool takeAction,
@@ -117,11 +146,10 @@ public class TranslateEntry(
             return;
         }
 
-        // 1) Extract all Localizer-wrapped keys using CSharpKeyExtractor
-        var keys = keyExtractor.ExtractLocalizerKeys(original)
-             .Select(k => k.ToLower())
-             .Distinct()
-             .ToList();
+        // 1) Extract keys and deduplicate with "first-wins" logic
+        var rawKeys = keyExtractor.ExtractLocalizerKeys(original);
+        var keys = DeduplicateKeys(rawKeys, csPath);
+
         logger.LogTrace("Extracted {Count} keys from {File}: {Keys}", keys.Count, csPath, string.Join(", ", keys));
 
         // 2) Figure out where the .resx should live
@@ -142,8 +170,7 @@ public class TranslateEntry(
 
         if (!takeAction || missingKeys.Count == 0)
         {
-            logger.LogInformation("No new localization needed for: {File}", csPath);
-            // Even if no new keys, we might need to save to clean up duplicates/case
+            logger.LogTrace("No new localization needed for: {File}", csPath);
             // Only save if there was existing content (to avoid creating empty files for non-loc files)
             if (takeAction && existing.Count > 0)
             {
@@ -207,12 +234,10 @@ public class TranslateEntry(
             return;
         }
 
-        // 1) extract all Localizer-wrapped keys
-        var keys = htmlLocalizer.ExtractLocalizerKeys(original)
-            .Where(k => k.Length > 0)
-            .Select(k => k.ToLower())
-            .Distinct()
-            .ToList();
+        // 1) extract keys and deduplicate
+        var rawKeys = htmlLocalizer.ExtractLocalizerKeys(original);
+        var keys = DeduplicateKeys(rawKeys, cshtmlPath);
+
         logger.LogTrace("Extracted {Count} keys from {View}: {Keys}", keys.Count, cshtmlPath, string.Join(", ", keys));
 
         // 2) figure out where the .resx should live
@@ -233,8 +258,7 @@ public class TranslateEntry(
 
         if (!takeAction || missingKeys.Count == 0)
         {
-            logger.LogInformation("No new localization needed for: {View}", cshtmlPath);
-            // Even if no new keys, we might need to save to clean up duplicates/case
+            logger.LogTrace("No new localization needed for: {View}", cshtmlPath);
             // Only save if there was existing content (to avoid creating empty files for non-loc files)
             if (takeAction && existing.Count > 0)
             {
@@ -323,10 +347,10 @@ public class TranslateEntry(
                             break;
                     }
 
-                    var lowerKey = key.ToLower();
-                    if (!resxContents.ContainsKey(lowerKey))
+                    // Store original key, case-sensitive
+                    if (!resxContents.ContainsKey(key))
                     {
-                        resxContents[lowerKey] = value;
+                        resxContents[key] = value;
                     }
                 }
             }
@@ -428,11 +452,10 @@ public class TranslateEntry(
             return;
         }
 
-        // 1) Extract all DataAnnotation keys using DataAnnotationKeyExtractor
-        var keys = dataAnnotationKeyExtractor.ExtractKeys(original)
-             .Select(k => k.ToLower())
-             .Distinct()
-             .ToList();
+        // 1) Extract keys and deduplicate
+        var rawKeys = dataAnnotationKeyExtractor.ExtractKeys(original);
+        var keys = DeduplicateKeys(rawKeys, csPath);
+
         logger.LogTrace("Extracted {Count} DataAnnotation keys from {File}: {Keys}", keys.Count, csPath,
             string.Join(", ", keys));
 
@@ -454,8 +477,7 @@ public class TranslateEntry(
 
         if (!takeAction || missingKeys.Count == 0)
         {
-            logger.LogInformation("No new localization needed for: {File}", csPath);
-            // Even if no new keys, we might need to save to clean up duplicates/case
+            logger.LogTrace("No new localization needed for: {File}", csPath);
             // Only save if there was existing content (to avoid creating empty files for non-loc files)
             if (takeAction && existing.Count > 0)
             {
