@@ -144,7 +144,8 @@ public class TranslateEntry(
         {
             logger.LogInformation("No new localization needed for: {File}", csPath);
             // Even if no new keys, we might need to save to clean up duplicates/case
-            if (takeAction)
+            // Only save if there was existing content (to avoid creating empty files for non-loc files)
+            if (takeAction && existing.Count > 0)
             {
                 var xml = GenerateXml(existing);
                 await File.WriteAllTextAsync(xmlPath, xml);
@@ -234,7 +235,8 @@ public class TranslateEntry(
         {
             logger.LogInformation("No new localization needed for: {View}", cshtmlPath);
             // Even if no new keys, we might need to save to clean up duplicates/case
-            if (takeAction)
+            // Only save if there was existing content (to avoid creating empty files for non-loc files)
+            if (takeAction && existing.Count > 0)
             {
                 var xml = GenerateXml(existing);
                 await File.WriteAllTextAsync(xmlPath, xml);
@@ -298,33 +300,40 @@ public class TranslateEntry(
             IgnoreWhitespace = true,
             Async = true
         };
-        using var reader = XmlReader.Create(path, settings);
-        while (await reader.ReadAsync())
+        try
         {
-            if (reader is { NodeType: XmlNodeType.Element, Name: "data" })
+            using var reader = XmlReader.Create(path, settings);
+            while (await reader.ReadAsync())
             {
-                var key = reader.GetAttribute("name");
-                if (string.IsNullOrEmpty(key)) continue;
-
-                var value = string.Empty;
-                while (await reader.ReadAsync())
+                if (reader is { NodeType: XmlNodeType.Element, Name: "data" })
                 {
-                    if (reader is { NodeType: XmlNodeType.Element, Name: "value" })
+                    var key = reader.GetAttribute("name");
+                    if (string.IsNullOrEmpty(key)) continue;
+
+                    var value = string.Empty;
+                    while (await reader.ReadAsync())
                     {
-                        value = await reader.ReadElementContentAsStringAsync();
-                        break;
+                        if (reader is { NodeType: XmlNodeType.Element, Name: "value" })
+                        {
+                            value = await reader.ReadElementContentAsStringAsync();
+                            break;
+                        }
+
+                        if (reader is { NodeType: XmlNodeType.EndElement, Name: "data" })
+                            break;
                     }
 
-                    if (reader is { NodeType: XmlNodeType.EndElement, Name: "data" })
-                        break;
-                }
-
-                var lowerKey = key.ToLower();
-                if (!resxContents.ContainsKey(lowerKey))
-                {
-                    resxContents[lowerKey] = value;
+                    var lowerKey = key.ToLower();
+                    if (!resxContents.ContainsKey(lowerKey))
+                    {
+                        resxContents[lowerKey] = value;
+                    }
                 }
             }
+        }
+        catch (XmlException)
+        {
+            return new Dictionary<string, string>();
         }
 
         return resxContents;
@@ -447,7 +456,8 @@ public class TranslateEntry(
         {
             logger.LogInformation("No new localization needed for: {File}", csPath);
             // Even if no new keys, we might need to save to clean up duplicates/case
-            if (takeAction)
+            // Only save if there was existing content (to avoid creating empty files for non-loc files)
+            if (takeAction && existing.Count > 0)
             {
                 var xml = GenerateXml(existing);
                 await File.WriteAllTextAsync(xmlPath, xml);
