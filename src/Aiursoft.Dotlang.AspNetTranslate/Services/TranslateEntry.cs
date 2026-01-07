@@ -118,7 +118,10 @@ public class TranslateEntry(
         }
 
         // 1) Extract all Localizer-wrapped keys using CSharpKeyExtractor
-        var keys = keyExtractor.ExtractLocalizerKeys(original);
+        var keys = keyExtractor.ExtractLocalizerKeys(original)
+             .Select(k => k.ToLower())
+             .Distinct()
+             .ToList();
         logger.LogTrace("Extracted {Count} keys from {File}: {Keys}", keys.Count, csPath, string.Join(", ", keys));
 
         // 2) Figure out where the .resx should live
@@ -140,6 +143,12 @@ public class TranslateEntry(
         if (!takeAction || missingKeys.Count == 0)
         {
             logger.LogInformation("No new localization needed for: {File}", csPath);
+            // Even if no new keys, we might need to save to clean up duplicates/case
+            if (takeAction)
+            {
+                var xml = GenerateXml(existing);
+                await File.WriteAllTextAsync(xmlPath, xml);
+            }
             return;
         }
 
@@ -176,8 +185,8 @@ public class TranslateEntry(
             existing[pair.SourceString] = pair.TargetString.Trim();
         }
 
-        var xml = GenerateXml(existing);
-        await File.WriteAllTextAsync(xmlPath, xml);
+        var finalXml = GenerateXml(existing);
+        await File.WriteAllTextAsync(xmlPath, finalXml);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 
@@ -200,6 +209,7 @@ public class TranslateEntry(
         // 1) extract all Localizer-wrapped keys
         var keys = htmlLocalizer.ExtractLocalizerKeys(original)
             .Where(k => k.Length > 0)
+            .Select(k => k.ToLower())
             .Distinct()
             .ToList();
         logger.LogTrace("Extracted {Count} keys from {View}: {Keys}", keys.Count, cshtmlPath, string.Join(", ", keys));
@@ -223,6 +233,12 @@ public class TranslateEntry(
         if (!takeAction || missingKeys.Count == 0)
         {
             logger.LogInformation("No new localization needed for: {View}", cshtmlPath);
+            // Even if no new keys, we might need to save to clean up duplicates/case
+            if (takeAction)
+            {
+                var xml = GenerateXml(existing);
+                await File.WriteAllTextAsync(xmlPath, xml);
+            }
             return;
         }
 
@@ -259,8 +275,8 @@ public class TranslateEntry(
             existing[pair.SourceString] = pair.TargetString.Trim();
         }
 
-        var xml = GenerateXml(existing);
-        await File.WriteAllTextAsync(xmlPath, xml);
+        var finalXml = GenerateXml(existing);
+        await File.WriteAllTextAsync(xmlPath, finalXml);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 
@@ -303,7 +319,11 @@ public class TranslateEntry(
                         break;
                 }
 
-                resxContents[key] = value;
+                var lowerKey = key.ToLower();
+                if (!resxContents.ContainsKey(lowerKey))
+                {
+                    resxContents[lowerKey] = value;
+                }
             }
         }
 
@@ -316,7 +336,8 @@ public class TranslateEntry(
             return string.Empty;
 
         var sb = new StringBuilder();
-        foreach (var kv in entries)
+        // Sort specifically to make output deterministic, though Dictionary order is not guaranteed
+        foreach (var kv in entries.OrderBy(k => k.Key))
         {
             // change " to &quot; for XML compatibility
             // change < to &lt; and > to &gt; for XML compatibility
@@ -399,7 +420,10 @@ public class TranslateEntry(
         }
 
         // 1) Extract all DataAnnotation keys using DataAnnotationKeyExtractor
-        var keys = dataAnnotationKeyExtractor.ExtractKeys(original);
+        var keys = dataAnnotationKeyExtractor.ExtractKeys(original)
+             .Select(k => k.ToLower())
+             .Distinct()
+             .ToList();
         logger.LogTrace("Extracted {Count} DataAnnotation keys from {File}: {Keys}", keys.Count, csPath,
             string.Join(", ", keys));
 
@@ -422,6 +446,12 @@ public class TranslateEntry(
         if (!takeAction || missingKeys.Count == 0)
         {
             logger.LogInformation("No new localization needed for: {File}", csPath);
+            // Even if no new keys, we might need to save to clean up duplicates/case
+            if (takeAction)
+            {
+                var xml = GenerateXml(existing);
+                await File.WriteAllTextAsync(xmlPath, xml);
+            }
             return;
         }
 
@@ -458,8 +488,8 @@ public class TranslateEntry(
             existing[pair.SourceString] = pair.TargetString.Trim();
         }
 
-        var xml = GenerateXml(existing);
-        await File.WriteAllTextAsync(xmlPath, xml);
+        var finalXml = GenerateXml(existing);
+        await File.WriteAllTextAsync(xmlPath, finalXml);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 }
