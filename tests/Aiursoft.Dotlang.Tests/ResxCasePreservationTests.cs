@@ -1,10 +1,8 @@
-using System.Text.RegularExpressions;
 using Aiursoft.Dotlang.AspNetTranslate.Services;
 using Aiursoft.Canon;
 using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 
 namespace Aiursoft.Dotlang.Tests
@@ -36,7 +34,7 @@ public class CaseTest {
 
             var mockEngine = new Mock<CachedTranslateEngine>(null!, null!, null!);
             mockEngine.Setup(x => x.TranslateWordInParagraphAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync((string s, string w, string l) => w);
+                .ReturnsAsync((string _, string w, string _) => w);
 
             var entry = new TranslateEntry(
                 new DataAnnotationKeyExtractor(),
@@ -51,7 +49,7 @@ public class CaseTest {
             var method = typeof(TranslateEntry).GetMethod("LocalizeContentInCSharp", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null) Assert.Fail("Method LocalizeContentInCSharp not found");
 
-            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1 });
+            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1 })!;
 
             // Assert
             var expectedResxPath = Path.Combine(resourcesDir, "CaseTest.zh-CN.resx");
@@ -66,7 +64,7 @@ public class CaseTest {
             // Note: Since we are not doing strict valid XML parsing here but string check, 
             // ensure we don't accidentally match part of something else.
             // But "name=\"go to\"" is specific enough.
-            Assert.IsFalse(content.Contains("name=\"go to\""));
+            Assert.DoesNotContain("name=\"go to\"", content);
 
             Directory.Delete(tempDir, true);
         }
