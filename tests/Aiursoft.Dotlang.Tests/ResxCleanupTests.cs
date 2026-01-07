@@ -1,10 +1,6 @@
-using System.Text.RegularExpressions;
 using Aiursoft.Dotlang.AspNetTranslate.Services;
-using Aiursoft.Canon;
 using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 
 namespace Aiursoft.Dotlang.Tests
@@ -56,7 +52,7 @@ namespace Aiursoft.Dotlang.Tests
             var method = typeof(TranslateEntry).GetMethod("LocalizeContentInCSharp", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null) Assert.Fail("Method LocalizeContentInCSharp not found");
 
-            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1 });
+            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1 })!;
 
             // Assert
             var newContent = await File.ReadAllTextAsync(resxPath);
@@ -64,11 +60,11 @@ namespace Aiursoft.Dotlang.Tests
             StringAssert.Contains(newContent, "name=\"duplicate\"");
             StringAssert.Contains(newContent, "name=\"normal\"");
 
-            Assert.IsFalse(newContent.Contains("name=\"Duplicate\""));
-            Assert.IsFalse(newContent.Contains("name=\"Normal\""));
+            Assert.DoesNotContain(newContent, "name=\"Duplicate\"");
+            Assert.DoesNotContain(newContent, "name=\"Normal\"");
 
             StringAssert.Contains(newContent, "<value>Value1</value>");
-            Assert.IsFalse(newContent.Contains("<value>Value2</value>"));
+            Assert.DoesNotContain(newContent, "<value>Value2</value>");
 
             Directory.Delete(tempDir, true);
         }
