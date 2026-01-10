@@ -16,6 +16,7 @@ public class StartUp : IStartUp
         services.AddTransient<TranslateEntry>();
         services.AddScoped<CshtmlLocalizer>();
         services.AddScoped<CSharpKeyExtractor>();
+        services.AddScoped<RenderInNavBarExtractor>();
         services.AddTransient<DocumentAnalyser>();
         services.AddMemoryCache();
         services.AddHttpClient();

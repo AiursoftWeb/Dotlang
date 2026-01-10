@@ -9,5 +9,6 @@ return await new NestedCommandApp()
     .WithFeature(new GenerateResxForCsharpHandler())
     .WithFeature(new GenerateResxForDataAnnotationsHandler())
     .WithFeature(new WrapCodeHandler())
+    .WithFeature(new AutoGenerateViewInjectionsForAiursoftTemplateHandler())
     .WithFeature(new FolderTranslateHandler())
     .RunAsync(args);

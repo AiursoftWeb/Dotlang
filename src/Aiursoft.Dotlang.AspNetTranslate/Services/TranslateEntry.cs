@@ -11,6 +11,7 @@ namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 public class TranslateEntry(
     DataAnnotationKeyExtractor dataAnnotationKeyExtractor,
     CSharpKeyExtractor keyExtractor,
+    RenderInNavBarExtractor renderInNavBarExtractor,
     CanonPool canonPool,
     CshtmlLocalizer htmlLocalizer,
     CachedTranslateEngine ollamaTranslate,
@@ -523,5 +524,136 @@ public class TranslateEntry(
         var finalXml = GenerateXml(existing);
         await File.WriteAllTextAsync(xmlPath, finalXml);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
+    }
+
+    public async Task AutoGenerateViewInjectionsAsync(string path, bool takeAction)
+    {
+        EnsureCsprojFileExistsAsync(path, false);
+        path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        
+        logger.LogInformation("Starting AutoGenerateViewInjections for Aiursoft Template at path: {Path}", path);
+        
+        // 1) Scan all controller files
+        var controllersPath = Path.Combine(path, "Controllers");
+        if (!Directory.Exists(controllersPath))
+        {
+            logger.LogWarning("Controllers directory not found: {ControllersPath}", controllersPath);
+            return;
+        }
+        
+        var controllerFiles = Directory.GetFileSystemEntries(controllersPath, "*.cs", SearchOption.AllDirectories);
+        var allKeys = new HashSet<string>(StringComparer.Ordinal);
+        
+        foreach (var controllerFile in controllerFiles)
+        {
+            if (controllerFile.EndsWith(".Designer.cs") ||
+                controllerFile.Contains($"{_sep}obj{_sep}") ||
+                controllerFile.Contains($"{_sep}bin{_sep}"))
+            {
+                continue;
+            }
+            
+            logger.LogTrace("Scanning controller: {ControllerFile}", controllerFile);
+            var content = await File.ReadAllTextAsync(controllerFile);
+            var keys = renderInNavBarExtractor.ExtractKeys(content);
+            
+            foreach (var key in keys)
+            {
+                allKeys.Add(key);
+                logger.LogTrace("Found key: \"{Key}\" in {File}", key, Path.GetFileName(controllerFile));
+            }
+        }
+        
+        logger.LogInformation("Found {Count} unique strings to inject", allKeys.Count);
+        
+        if (allKeys.Count == 0)
+        {
+            logger.LogInformation("No strings found to inject");
+            return;
+        }
+        
+        // 2) Find ViewModelArgsInjector.cs
+        var servicesPath = Path.Combine(path, "Services");
+        if (!Directory.Exists(servicesPath))
+        {
+            logger.LogWarning("Services directory not found: {ServicesPath}. Cannot inject strings.", servicesPath);
+            return;
+        }
+        
+        var viewModelArgsInjectorPath = Path.Combine(servicesPath, "ViewModelArgsInjector.cs");
+        if (!File.Exists(viewModelArgsInjectorPath))
+        {
+            logger.LogWarning("ViewModelArgsInjector.cs not found at: {Path}. Cannot inject strings.", viewModelArgsInjectorPath);
+            return;
+        }
+        
+        logger.LogInformation("Found ViewModelArgsInjector at: {Path}", viewModelArgsInjectorPath);
+        
+        // 3) Read the file and parse it
+        var originalContent = await File.ReadAllTextAsync(viewModelArgsInjectorPath);
+        
+        // Find the _useless_for_localizer method using regex
+        var methodPattern = @"private\s+void\s+_useless_for_localizer\s*\(\s*\)\s*\{[^}]*\}";
+        var methodMatch = System.Text.RegularExpressions.Regex.Match(originalContent, methodPattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+        
+        if (!methodMatch.Success)
+        {
+            logger.LogWarning("Could not find _useless_for_localizer() method in ViewModelArgsInjector.cs");
+            return;
+        }
+        
+        // Extract existing keys from the method
+        var methodContent = methodMatch.Value;
+        var existingKeyPattern = @"_\s*=\s*localizer\[""([^""]*)""\]";
+        var existingMatches = System.Text.RegularExpressions.Regex.Matches(methodContent, existingKeyPattern);
+        var existingKeys = existingMatches.Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+        
+        logger.LogInformation("Found {Count} existing keys in _useless_for_localizer", existingKeys.Count);
+        
+        // Find new keys that need to be added
+        var newKeys = allKeys.Where(k => !existingKeys.Contains(k)).OrderBy(k => k).ToList();
+        
+        if (newKeys.Count == 0)
+        {
+            logger.LogInformation("All keys already exist in _useless_for_localizer. No changes needed.");
+            return;
+        }
+        
+        logger.LogInformation("Need to add {Count} new keys to _useless_for_localizer", newKeys.Count);
+        foreach (var key in newKeys)
+        {
+            logger.LogInformation("  - \"{Key}\"", key);
+        }
+        
+        if (!takeAction)
+        {
+            logger.LogInformation("Dry run mode. No changes will be made.");
+            return;
+        }
+        
+        // 4) Generate the new method content
+        var newLines = new StringBuilder();
+        foreach (var key in newKeys)
+        {
+            newLines.AppendLine($"        _ = localizer[\"{key}\"];");
+        }
+        
+        // Find the insertion point (before the closing brace of the method)
+        // We need to trim the newLine string to avoid adding extra blank lines
+        var newKeysText = newLines.ToString().TrimEnd('\r', '\n');
+        
+        var closingBraceIndex = methodMatch.Value.LastIndexOf('}');
+        var beforeClosingBrace = methodMatch.Value.Substring(0, closingBraceIndex).TrimEnd('\r', '\n');
+        
+        // Build the new method with proper line breaks
+        var newMethodContent = beforeClosingBrace + "\n" + newKeysText + "\n    }";
+        
+        // Replace the old method with the new one
+        var updatedContent = originalContent.Substring(0, methodMatch.Index) + 
+                             newMethodContent + 
+                             originalContent.Substring(methodMatch.Index + methodMatch.Length);
+        
+        await File.WriteAllTextAsync(viewModelArgsInjectorPath, updatedContent);
+        logger.LogInformation("Successfully injected {Count} new keys into ViewModelArgsInjector._useless_for_localizer()", newKeys.Count);
     }
 }

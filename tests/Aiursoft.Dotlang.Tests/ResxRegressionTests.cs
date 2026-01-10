@@ -23,6 +23,7 @@ namespace Aiursoft.Dotlang.Tests
             var entry = new TranslateEntry(
                 new DataAnnotationKeyExtractor(),
                 new CSharpKeyExtractor(),
+                new RenderInNavBarExtractor(),
                 null!,
                 new CshtmlLocalizer(),
                 new CachedTranslateEngine(null!, null!, null!),
