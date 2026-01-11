@@ -13,7 +13,7 @@ namespace Aiursoft.Dotlang.Tests
 
             var keys = localizer.ExtractLocalizerKeys(content);
 
-            Assert.AreEqual(3, keys.Length);
+            Assert.HasCount(3, keys);
             CollectionAssert.Contains(keys, "Title");
             CollectionAssert.Contains(keys, "Content");
             // CshtmlLocalizer unescapes \" to "
@@ -29,7 +29,7 @@ namespace Aiursoft.Dotlang.Tests
             var (transformed, keys) = localizer.Process(content);
 
             // Verify keys extracted
-            Assert.AreEqual(2, keys.Count);
+            Assert.HasCount(2, keys);
             CollectionAssert.Contains(keys, "Hello World");
             CollectionAssert.Contains(keys, "This is a test.");
 
@@ -46,7 +46,7 @@ namespace Aiursoft.Dotlang.Tests
 
             var (transformed, keys) = localizer.Process(content);
 
-            Assert.AreEqual(1, keys.Count);
+            Assert.HasCount(1, keys);
             CollectionAssert.Contains(keys, "New Text");
 
             StringAssert.Contains(transformed, "@Localizer[\"Existing\"]");
@@ -59,13 +59,13 @@ namespace Aiursoft.Dotlang.Tests
              var localizer = new CshtmlLocalizer();
              var content = "@{ \n    var x = \"Don't translate me\"; \n}\n<div>\n    <p>Translate Me</p>\n</div>";
             
-            var (transformed, keys) = localizer.Process(content);
+            var (_, keys) = localizer.Process(content);
 
-            Assert.AreEqual(1, keys.Count);
+            Assert.HasCount(1, keys);
             CollectionAssert.Contains(keys, "Translate Me");
             
             // Should not translate C# variable
-            Assert.IsFalse(keys.Contains("Don't translate me"));
+            Assert.DoesNotContain("Don't translate me", keys);
         }
     }
 }

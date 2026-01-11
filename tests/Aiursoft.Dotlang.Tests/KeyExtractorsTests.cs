@@ -23,7 +23,7 @@ namespace Aiursoft.Dotlang.Tests
 
             var keys = extractor.ExtractLocalizerKeys(content);
 
-            Assert.AreEqual(2, keys.Count);
+            Assert.HasCount(2, keys);
             CollectionAssert.Contains(keys, "Hello");
             CollectionAssert.Contains(keys, "World");
         }
@@ -45,7 +45,7 @@ namespace Aiursoft.Dotlang.Tests
 
             var keys = extractor.ExtractKeys(content);
 
-            Assert.AreEqual(3, keys.Count);
+            Assert.HasCount(3, keys);
             CollectionAssert.Contains(keys, "Required Field");
             CollectionAssert.Contains(keys, "User Name");
             CollectionAssert.Contains(keys, "Too Long");
@@ -68,7 +68,7 @@ namespace Aiursoft.Dotlang.Tests
 
             var keys = extractor.ExtractKeys(content);
 
-            Assert.AreEqual(4, keys.Count);
+            Assert.HasCount(4, keys);
             CollectionAssert.Contains(keys, "Dashboard");
             CollectionAssert.Contains(keys, "Overview");
             CollectionAssert.Contains(keys, "Settings");
@@ -82,14 +82,14 @@ namespace Aiursoft.Dotlang.Tests
             var dataAnnotationExtractor = new DataAnnotationKeyExtractor();
             var navBarExtractor = new RenderInNavBarExtractor();
 
-            Assert.AreEqual(0, csharpExtractor.ExtractLocalizerKeys(null!).Count);
-            Assert.AreEqual(0, csharpExtractor.ExtractLocalizerKeys("").Count);
+            Assert.IsEmpty(csharpExtractor.ExtractLocalizerKeys(null!));
+            Assert.IsEmpty(csharpExtractor.ExtractLocalizerKeys(""));
 
-            Assert.AreEqual(0, dataAnnotationExtractor.ExtractKeys(null!).Count);
-            Assert.AreEqual(0, dataAnnotationExtractor.ExtractKeys("").Count);
+            Assert.IsEmpty(dataAnnotationExtractor.ExtractKeys(null!));
+            Assert.IsEmpty(dataAnnotationExtractor.ExtractKeys(""));
 
-            Assert.AreEqual(0, navBarExtractor.ExtractKeys(null!).Count);
-            Assert.AreEqual(0, navBarExtractor.ExtractKeys("").Count);
+            Assert.IsEmpty(navBarExtractor.ExtractKeys(null!));
+            Assert.IsEmpty(navBarExtractor.ExtractKeys(""));
         }
     }
 }
