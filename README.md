@@ -66,6 +66,55 @@ dotlang generate-resx-annotations --path . --model "qwen3:30b-a3b-instruct-2507-
 
 Will help you generate `.resx` files for all the `.cshtml` files in the current folder.
 
+## Use as a library
+
+You can also use the core logic as a library in your own project.
+
+First, install the package:
+
+```bash
+dotnet add package Aiursoft.Dotlang.AspNetTranslate
+```
+
+Then, register the services in your `IServiceCollection`:
+
+```csharp
+using Aiursoft.Dotlang.AspNetTranslate;
+using Aiursoft.Dotlang.Shared;
+
+// ...
+services.AddHttpClient();
+new StartUp().ConfigureServices(services);
+services.Configure<TranslateOptions>(options =>
+{
+    options.OllamaInstance = "https://ollama.example.com/api/chat/completions";
+    options.OllamaModel = "qwen3:30b";
+    options.OllamaToken = "your-token";
+});
+```
+
+Finally, you can use `TranslateEntry` to perform translation tasks:
+
+```csharp
+var entry = serviceProvider.GetRequiredService<TranslateEntry>();
+
+// Localize all .cshtml files in a project
+await entry.StartLocalizeContentInCsHtmlAsync(
+    path: "./MyProject", 
+    langs: ["zh-CN", "ja-JP"], 
+    takeAction: true, 
+    concurentRequests: 8);
+
+// Localize all .cs files
+await entry.StartLocalizeContentInCSharpAsync(path, langs, true, 8);
+
+// Localize DataAnnotations
+await entry.StartLocalizeDataAnnotationsAsync(path, langs, true, 8);
+
+// Wrap plain text with @Localizer[""]
+await entry.StartWrapWithLocalizerAsync(path, true);
+```
+
 ## Run locally
 
 Requirements about how to run
