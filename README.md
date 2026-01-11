@@ -58,6 +58,7 @@ For example, if you want to localize entire project with Aiursoft Ollama server,
 
 ```bash
 OLLAMA_API_KEY="CONFIDENTIAL"
+dotlang auto-generate-view-injections-for-aiursoft-template --path .
 dotlang generate-resx-csharp      --path . --model "qwen3:30b-a3b-instruct-2507-q8_0" --token $OLLAMA_API_KEY --instance "https://ollama.aiursoft.com/api/chat/completions" -c 8
 dotlang generate-resx-view        --path . --model "qwen3:30b-a3b-instruct-2507-q8_0" --token $OLLAMA_API_KEY --instance "https://ollama.aiursoft.com/api/chat/completions" -c 8
 dotlang generate-resx-annotations --path . --model "qwen3:30b-a3b-instruct-2507-q8_0" --token $OLLAMA_API_KEY --instance "https://ollama.aiursoft.com/api/chat/completions" -c 8
