@@ -12,7 +12,7 @@ public class MarkdownShredderTests
     {
         var content = "Hello\n\nWorld";
         var result = _shredder.Shred(content, 100);
-        Assert.AreEqual(1, result.Count);
+        Assert.HasCount(1, result);
         Assert.AreEqual(ChunkType.Translatable, result[0].Type);
         Assert.AreEqual(content, result[0].Content);
     }
@@ -28,12 +28,12 @@ public class MarkdownShredderTests
         // 2. ```csharp\nvar a = 1;\n``` (Static)
         // 3. \n\nWorld (Translatable)
         
-        Assert.AreEqual(3, result.Count);
+        Assert.HasCount(3, result);
         Assert.AreEqual(ChunkType.Translatable, result[0].Type);
         Assert.AreEqual("Hello\n\n", result[0].Content);
         
         Assert.AreEqual(ChunkType.Static, result[1].Type);
-        Assert.IsTrue(result[1].Content.Contains("var a = 1;"));
+        Assert.Contains("var a = 1;", result[1].Content);
         
         Assert.AreEqual(ChunkType.Translatable, result[2].Type);
         Assert.AreEqual("\n\nWorld", result[2].Content);
@@ -53,7 +53,7 @@ public class MarkdownShredderTests
         // Group 1: P1\n\nP2\n\n (8 chars)
         // Group 2: P3\n\nP4 (6 chars)
         
-        Assert.AreEqual(2, result.Count);
+        Assert.HasCount(2, result);
         Assert.AreEqual("P1\n\nP2\n\n", result[0].Content);
         Assert.AreEqual("P3\n\nP4", result[1].Content);
     }
@@ -62,9 +62,9 @@ public class MarkdownShredderTests
     public void TestHugeParagraph()
     {
         var content = new string('a', 2000);
-        var result = _shredder.Shred(content, 1000);
+        var result = _shredder.Shred(content);
         
-        Assert.AreEqual(1, result.Count);
+        Assert.HasCount(1, result);
         Assert.AreEqual(content, result[0].Content);
         Assert.AreEqual(ChunkType.Translatable, result[0].Type);
     }
@@ -73,7 +73,7 @@ public class MarkdownShredderTests
     public void TestInterleavedCodeBlocks()
     {
         var content = "Para 1\n\n```csharp\ncode1\n```\n\nPara 2\n\n```javascript\ncode2\n```\n\nPara 3";
-        var result = _shredder.Shred(content, 1000);
+        var result = _shredder.Shred(content);
         
         // Expected:
         // 1. Para 1\n\n (Translatable)
@@ -82,7 +82,7 @@ public class MarkdownShredderTests
         // 4. ```javascript\ncode2\n``` (Static)
         // 5. \n\nPara 3 (Translatable)
         
-        Assert.AreEqual(5, result.Count);
+        Assert.HasCount(5, result);
         Assert.AreEqual("Para 1\n\n", result[0].Content);
         Assert.AreEqual("```csharp\ncode1\n```", result[1].Content);
         Assert.AreEqual("\n\nPara 2\n\n", result[2].Content);
