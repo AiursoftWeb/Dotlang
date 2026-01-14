@@ -21,6 +21,7 @@ public class StartUp : IStartUp
         services.AddMemoryCache();
         services.AddHttpClient();
         services.AddTaskCanon();
+        services.AddScoped<MarkdownShredder>();
         services.AddScoped<OllamaBasedTranslatorEngine>();
         services.AddScoped<CachedTranslateEngine>();
         services.AddGptClient();
