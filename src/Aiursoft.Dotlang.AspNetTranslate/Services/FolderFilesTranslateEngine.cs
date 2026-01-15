@@ -10,7 +10,8 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
         string destinationFolder,
         string language,
         bool recursive,
-        string[] extensions)
+        string[] extensions,
+        bool skipExistingFiles)
     {
         logger.LogInformation(
             "Translating files from {sourceFolder} to {lang} and will be saved to {destinationFolder}.", sourceFolder,
@@ -29,14 +30,21 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
 
         foreach (var sourceFile in sourceIFilesToTranslate)
         {
+            var destinationFile = sourceFile.Replace(sourceFolder, destinationFolder);
+
+            if (skipExistingFiles && File.Exists(destinationFile))
+            {
+                logger.LogInformation("Skipping {sourceFile} because {destinationFile} already exists.", sourceFile, destinationFile);
+                continue;
+            }
+
             var sourceContent = await File.ReadAllTextAsync(sourceFile);
 
             logger.LogInformation("Translating {sourceFile}...", sourceFile);
             var translatedContent = await ollamaTranslateEngine.TranslateAsync(
                 sourceContent,
                 language);
-            var destinationFile = sourceFile.Replace(sourceFolder, destinationFolder);
-
+            
             var destinationDirectory = Path.GetDirectoryName(destinationFile);
             if (!Directory.Exists(destinationDirectory))
             {

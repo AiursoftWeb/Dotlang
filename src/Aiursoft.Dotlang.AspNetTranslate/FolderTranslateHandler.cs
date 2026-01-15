@@ -75,6 +75,14 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
         Required = true
     };
 
+    private static readonly Option<bool> SkipExistingFilesOption = new(
+        name: "--skip-existing-files",
+        aliases: ["-k"])
+    {
+        DefaultValueFactory = _ => false,
+        Description = "Skip existing files."
+    };
+
     protected override IEnumerable<Option> GetCommandOptions()
     {
         return
@@ -87,7 +95,8 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
             ExtensionsOption,
             OllamaInstanceOption,
             OllamaModelOption,
-            OllamaTokenOption
+            OllamaTokenOption,
+            SkipExistingFilesOption
         ];
     }
 
@@ -99,6 +108,7 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
         var language = context.GetValue(LanguageOptions)!;
         var recursive = context.GetValue(RecursiveOption);
         var extensions = context.GetValue(ExtensionsOption);
+        var skipExistingFiles = context.GetValue(SkipExistingFilesOption);
 
         if (!(extensions?.Any() ?? false))
             throw new ArgumentException("At least one extension should be provided for --extensions.");
@@ -129,6 +139,7 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
             destinationFolder: absoluteDestinationPath,
             language: language,
             recursive: recursive,
-            extensions: extensions);
+            extensions: extensions,
+            skipExistingFiles: skipExistingFiles);
     }
 }
