@@ -89,7 +89,16 @@ public class OllamaBasedTranslatorEngine(
         string sourceContent,
         string targetLanguage)
     {
-        var message = Prompt.Replace("{CONTENT}", sourceContent).Replace("{LANG}", targetLanguage);
+        var leadingWhitespace = new string(sourceContent.TakeWhile(char.IsWhiteSpace).ToArray());
+        var trailingWhitespace = new string(sourceContent.Reverse().TakeWhile(char.IsWhiteSpace).Reverse().ToArray());
+        var trimmedSource = sourceContent.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedSource))
+        {
+            return sourceContent;
+        }
+
+        var message = Prompt.Replace("{CONTENT}", trimmedSource).Replace("{LANG}", targetLanguage);
         var content = new OpenAiRequestModel
         {
             Model = options.Value.OllamaModel,
@@ -104,8 +113,8 @@ public class OllamaBasedTranslatorEngine(
         };
 
         logger.LogInformation(
-            @"Calling Ollama to translate: ""{sourceContent}"", Instance: ""{instance}"", Model: ""{model}""",
-            sourceContent, options.Value.OllamaInstance, options.Value.OllamaModel);
+            @"Calling Ollama to translate: ""{trimmedSource}"", Instance: ""{instance}"", Model: ""{model}""",
+            trimmedSource, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken,
@@ -117,7 +126,7 @@ public class OllamaBasedTranslatorEngine(
                     "The translation result is not wrapped in code block. Please check the input content and language.");
             }
 
-            var resultTextWithoutCodeBlock = resultText.Trim('`', ' ', '\n');
+            var resultTextWithoutCodeBlock = resultText.Trim().Trim('`').Trim('\n', '\r');
             if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
             {
                 throw new InvalidOperationException(
@@ -127,7 +136,7 @@ public class OllamaBasedTranslatorEngine(
             return resultTextWithoutCodeBlock;
         }, attempts: 5);
         logger.LogInformation(@"Ollama translation result: ""{result}""", aiResponseRaw);
-        return aiResponseRaw;
+        return leadingWhitespace + aiResponseRaw + trailingWhitespace;
     }
 
     public async Task<string> TranslateWordInParagraphAsync(
@@ -138,10 +147,20 @@ public class OllamaBasedTranslatorEngine(
         var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName) 
             ? $"{language}, {fullName}" 
             : language;
+
+        var leadingWhitespace = new string(word.TakeWhile(char.IsWhiteSpace).ToArray());
+        var trailingWhitespace = new string(word.Reverse().TakeWhile(char.IsWhiteSpace).Reverse().ToArray());
+        var trimmedWord = word.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedWord))
+        {
+            return word;
+        }
+
         var message = PromptWord
             .Replace("{CONTENT}", sourceContent)
             .Replace("{LANG}", targetLanguage)
-            .Replace("{WORD}", word);
+            .Replace("{WORD}", trimmedWord);
         var content = new OpenAiRequestModel
         {
             Model = options.Value.OllamaModel,
@@ -155,8 +174,8 @@ public class OllamaBasedTranslatorEngine(
             ]
         };
 
-        logger.LogInformation(@"Calling Ollama to translate: ""{word}"" to ""{lang}"", Instance: ""{instance}"", Model: ""{model}""",
-            word, language, options.Value.OllamaInstance, options.Value.OllamaModel);
+        logger.LogInformation(@"Calling Ollama to translate: ""{trimmedWord}"" to ""{lang}"", Instance: ""{instance}"", Model: ""{model}""",
+            trimmedWord, language, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
@@ -167,7 +186,7 @@ public class OllamaBasedTranslatorEngine(
                 throw new InvalidOperationException(
                     "The translation result is not wrapped in code block. Please check the input content and language.");
             }
-            var resultTextWithoutCodeBlock = resultText.Trim('`', ' ', '\n');
+            var resultTextWithoutCodeBlock = resultText.Trim().Trim('`').Trim('\n', '\r');
             if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
             {
                 throw new InvalidOperationException(
@@ -176,7 +195,7 @@ public class OllamaBasedTranslatorEngine(
 
             return resultTextWithoutCodeBlock;
         }, attempts: 5);
-        logger.LogInformation(@"Ollama translation result of ""{word}"" is ""{result}""", word, aiResponseRaw);
-        return aiResponseRaw;
+        logger.LogInformation(@"Ollama translation result of ""{trimmedWord}"" is ""{result}""", trimmedWord, aiResponseRaw);
+        return leadingWhitespace + aiResponseRaw + trailingWhitespace;
     }
 }
