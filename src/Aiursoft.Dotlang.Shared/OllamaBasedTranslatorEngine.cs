@@ -1,3 +1,4 @@
+using System.Text;
 using Aiursoft.Canon;
 using Aiursoft.GptClient.Abstractions;
 using Aiursoft.GptClient.Services;
@@ -10,7 +11,8 @@ public class OllamaBasedTranslatorEngine(
     IOptions<TranslateOptions> options,
     RetryEngine retryEngine,
     ILogger<OllamaBasedTranslatorEngine> logger,
-    ChatClient chatClient)
+    ChatClient chatClient,
+    MarkdownShredder shredder)
 {
     private const string Prompt =
         """
@@ -62,9 +64,31 @@ public class OllamaBasedTranslatorEngine(
         string sourceContent,
         string language)
     {
-        var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName) 
-            ? $"{language}, {fullName}" 
+        var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName)
+            ? $"{language}, {fullName}"
             : language;
+
+        var chunks = shredder.Shred(sourceContent);
+        var result = new StringBuilder();
+        foreach (var chunk in chunks)
+        {
+            if (chunk.Type == ChunkType.Translatable)
+            {
+                var translated = await TranslateSingleChunkAsync(chunk.Content, targetLanguage);
+                result.Append(translated);
+            }
+            else
+            {
+                result.Append(chunk.Content);
+            }
+        }
+        return result.ToString();
+    }
+
+    private async Task<string> TranslateSingleChunkAsync(
+        string sourceContent,
+        string targetLanguage)
+    {
         var message = Prompt.Replace("{CONTENT}", sourceContent).Replace("{LANG}", targetLanguage);
         var content = new OpenAiRequestModel
         {
@@ -81,16 +105,18 @@ public class OllamaBasedTranslatorEngine(
 
         logger.LogInformation(
             @"Calling Ollama to translate: ""{sourceContent}"", Instance: ""{instance}"", Model: ""{model}""",
-            content, options.Value.OllamaInstance, options.Value.OllamaModel);
+            sourceContent, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
-            var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
+            var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken,
+                CancellationToken.None);
             var resultText = result.GetAnswerPart();
             if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))
             {
                 throw new InvalidOperationException(
                     "The translation result is not wrapped in code block. Please check the input content and language.");
             }
+
             var resultTextWithoutCodeBlock = resultText.Trim('`', ' ', '\n');
             if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
             {
