@@ -89,4 +89,26 @@ public class MarkdownShredderTests
         Assert.AreEqual("```javascript\ncode2\n```", result[3].Content);
         Assert.AreEqual("\n\nPara 3", result[4].Content);
     }
+
+    [TestMethod]
+    public void TestShredWithTitledCodeBlock()
+    {
+        var content = "Before\n\n```bash title=\"Install\"\nsudo apt install\n```\n\nAfter";
+        var result = _shredder.Shred(content, 100);
+
+        Assert.AreEqual(3, result.Count);
+        Assert.AreEqual(ChunkType.Static, result[1].Type);
+        Assert.AreEqual("```bash title=\"Install\"\nsudo apt install\n```", result[1].Content);
+    }
+
+    [TestMethod]
+    public void TestShredWithTildeCodeBlock()
+    {
+        var content = "Before\n\n~~~bash\nsudo apt install\n~~~\n\nAfter";
+        var result = _shredder.Shred(content, 100);
+
+        Assert.AreEqual(3, result.Count);
+        Assert.AreEqual(ChunkType.Static, result[1].Type);
+        Assert.AreEqual("~~~bash\nsudo apt install\n~~~", result[1].Content);
+    }
 }

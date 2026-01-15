@@ -31,9 +31,9 @@ public class MarkdownShredder
         }
 
         // 1. Split by code blocks
-        // Using a regex that matches ```...``` including the backticks.
+        // Using a regex that matches ```...``` or ~~~...~~~ including the backticks/tildes.
         // It handles the language identifier and content.
-        var codeBlockRegex = new Regex(@"(```[a-zA-Z0-9#+]*\n?.*?\n?```)", RegexOptions.Singleline);
+        var codeBlockRegex = new Regex(@"((?<=^|\n)[ \t]*(?:`{3,}|~{3,})[^\n]*\n.*?\n[ \t]*(?:`{3,}|~{3,})(?=\n|$))", RegexOptions.Singleline);
         var parts = codeBlockRegex.Split(content);
         var matches = codeBlockRegex.Matches(content);
 
