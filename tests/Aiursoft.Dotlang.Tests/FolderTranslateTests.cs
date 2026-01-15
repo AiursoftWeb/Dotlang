@@ -4,8 +4,6 @@ using Aiursoft.Dotlang.Shared;
 using Aiursoft.GptClient.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Aiursoft.Dotlang.Tests;
 
