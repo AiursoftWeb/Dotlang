@@ -96,7 +96,7 @@ public class MarkdownShredderTests
         var content = "Before\n\n```bash title=\"Install\"\nsudo apt install\n```\n\nAfter";
         var result = _shredder.Shred(content, 100);
 
-        Assert.AreEqual(3, result.Count);
+        Assert.HasCount(3, result);
         Assert.AreEqual(ChunkType.Static, result[1].Type);
         Assert.AreEqual("```bash title=\"Install\"\nsudo apt install\n```", result[1].Content);
     }
@@ -107,7 +107,7 @@ public class MarkdownShredderTests
         var content = "Before\n\n~~~bash\nsudo apt install\n~~~\n\nAfter";
         var result = _shredder.Shred(content, 100);
 
-        Assert.AreEqual(3, result.Count);
+        Assert.HasCount(3, result);
         Assert.AreEqual(ChunkType.Static, result[1].Type);
         Assert.AreEqual("~~~bash\nsudo apt install\n~~~", result[1].Content);
     }
