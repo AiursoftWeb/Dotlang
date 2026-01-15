@@ -66,6 +66,27 @@ dotlang generate-resx-annotations --path . --model "qwen3:30b-a3b-instruct-2507-
 
 Will help you generate `.resx` files for all the `.cshtml` files in the current folder.
 
+## Use as a simple translator
+
+This tool can also be used to simply translate a folder of files from one language to another.
+
+```bash
+dotlang folder-translate --source "./src" --destination "./dist" --language "zh-CN" --extensions "txt" --extensions "md" --recursive --model "qwen:32b" --token "your-ollama-token" --instance "http://ollama:11434/api/chat"
+```
+
+Options:
+
+* `-s`, `--source` (REQUIRED): Path of the folder to translate files.
+* `-d`, `--destination` (REQUIRED): Path of the folder to save translated files.
+* `-l`, `--language` (REQUIRED): The target language code.
+* `-r`, `--recursive`: Recursively search for files in subdirectories.
+* `-e`, `--extensions`: Extensions of files to translate. Can be used multiple times. Default is `html`.
+* `--instance`: The Ollama instance to use.
+* `--model`: The Ollama model to use.
+* `--token`: The Ollama token to use.
+* `-k`, `--skip-existing-files`: Skip existing files.
+
+
 ## Use as a library
 
 You can also use the core logic as a library in your own project.
@@ -81,9 +102,29 @@ Then, register the services in your `IServiceCollection`:
 ```csharp
 using Aiursoft.Dotlang.AspNetTranslate;
 using Aiursoft.Dotlang.Shared;
+using Aiursoft.Canon;
+using Aiursoft.GptClient;
 
 // ...
+services.AddLogging();
 services.AddHttpClient();
+services.AddMemoryCache();
+services.AddTaskCanon();
+services.AddGptClient();
+
+services.AddScoped<MarkdownShredder>();
+services.AddScoped<OllamaBasedTranslatorEngine>();
+services.AddScoped<CachedTranslateEngine>();
+services.AddScoped<FolderFilesTranslateEngine>();
+services.AddScoped<TranslateEntry>();
+
+// Add necessary specialized services for TranslateEntry
+services.AddScoped<DataAnnotationKeyExtractor>();
+services.AddScoped<CshtmlLocalizer>();
+services.AddScoped<CSharpKeyExtractor>();
+services.AddScoped<RenderInNavBarExtractor>();
+services.AddTransient<DocumentAnalyser>();
+
 new StartUp().ConfigureServices(services);
 services.Configure<TranslateOptions>(options =>
 {
@@ -94,6 +135,39 @@ services.Configure<TranslateOptions>(options =>
 ```
 
 Finally, you can use `TranslateEntry` to perform translation tasks:
+
+```csharp
+var entry = serviceProvider.GetRequiredService<TranslateEntry>();
+```
+
+Or use `FolderFilesTranslateEngine` for simple file translation:
+
+```csharp
+var folderEngine = serviceProvider.GetRequiredService<FolderFilesTranslateEngine>();
+
+await folderEngine.TranslateAsync(
+    sourceFolder: "./src",
+    destinationFolder: "./dist",
+    language: "zh-CN",
+    recursive: true,
+    extensions: [".txt", ".md"],
+    skipExistingFiles: false);
+```
+
+### Translate plain text
+
+You can also use the `OllamaBasedTranslatorEngine` to translate plain text strings directly.
+
+```csharp
+var translator = serviceProvider.GetRequiredService<OllamaBasedTranslatorEngine>();
+
+var englishText = "Hello, world!";
+var chineseText = await translator.TranslateAsync(englishText, "zh-CN");
+
+Console.WriteLine(chineseText); // 你好，世界！
+```
+
+### Advanced Usage with TranslateEntry
 
 ```csharp
 var entry = serviceProvider.GetRequiredService<TranslateEntry>();
