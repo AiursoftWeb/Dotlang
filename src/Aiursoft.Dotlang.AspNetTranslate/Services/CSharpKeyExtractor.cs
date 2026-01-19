@@ -20,7 +20,7 @@ public class CSharpKeyExtractor
     // - `)`           : Ends capturing group 1.
     // - `"`           : Matches the closing quote.
     // - `\]`          : Matches the closing bracket.
-    private static readonly Regex LocalizerRegex = new(@"localizer\[""((?:\\.|[^""\\])*)""\]", RegexOptions.Compiled);
+    private static readonly Regex LocalizerRegex = new(@"[Ll]ocalizer\[""((?:\\.|[^""\\])*)""\]", RegexOptions.Compiled);
 
     /// <summary>
     /// Extracts all distinct strings wrapped in `localizer["..."]` from a given C# code string.
