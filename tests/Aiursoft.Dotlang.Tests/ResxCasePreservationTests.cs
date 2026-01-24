@@ -39,7 +39,7 @@ public class CaseTest {
             var entry = new TranslateEntry(
                 new DataAnnotationKeyExtractor(),
                 new CSharpKeyExtractor(),
-                new RenderInNavBarExtractor(),
+                new ViewMetadataExtractor(),
                 new CanonPool(new NullLogger<CanonPool>()),
                 new CshtmlLocalizer(),
                 mockEngine.Object,

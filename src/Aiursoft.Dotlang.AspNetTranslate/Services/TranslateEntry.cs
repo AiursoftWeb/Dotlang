@@ -11,7 +11,7 @@ namespace Aiursoft.Dotlang.AspNetTranslate.Services;
 public class TranslateEntry(
     DataAnnotationKeyExtractor dataAnnotationKeyExtractor,
     CSharpKeyExtractor keyExtractor,
-    RenderInNavBarExtractor renderInNavBarExtractor,
+    ViewMetadataExtractor viewMetadataExtractor,
     CanonPool canonPool,
     CshtmlLocalizer htmlLocalizer,
     CachedTranslateEngine ollamaTranslate,
@@ -533,42 +533,74 @@ public class TranslateEntry(
         
         logger.LogInformation("Starting AutoGenerateViewInjections for Aiursoft Template at path: {Path}", path);
         
+        var allKeys = new HashSet<string>(StringComparer.Ordinal);
+
         // 1) Scan all controller files
         var controllersPath = Path.Combine(path, "Controllers");
         if (!Directory.Exists(controllersPath))
         {
             logger.LogWarning("Controllers directory not found: {ControllersPath}", controllersPath);
-            return;
         }
-        
-        var controllerFiles = Directory.GetFileSystemEntries(controllersPath, "*.cs", SearchOption.AllDirectories);
-        var allKeys = new HashSet<string>(StringComparer.Ordinal);
-        
-        foreach (var controllerFile in controllerFiles)
+        else
         {
-            if (controllerFile.EndsWith(".Designer.cs") ||
-                controllerFile.Contains($"{_sep}obj{_sep}") ||
-                controllerFile.Contains($"{_sep}bin{_sep}"))
+            var controllerFiles = Directory.GetFileSystemEntries(controllersPath, "*.cs", SearchOption.AllDirectories);
+            foreach (var controllerFile in controllerFiles)
             {
-                continue;
-            }
-            
-            logger.LogTrace("Scanning controller: {ControllerFile}", controllerFile);
-            var content = await File.ReadAllTextAsync(controllerFile);
-            var keys = renderInNavBarExtractor.ExtractKeys(content);
-            
-            foreach (var key in keys)
-            {
-                allKeys.Add(key);
-                logger.LogTrace("Found key: \"{Key}\" in {File}", key, Path.GetFileName(controllerFile));
+                if (controllerFile.EndsWith(".Designer.cs") ||
+                    controllerFile.Contains($"{_sep}obj{_sep}") ||
+                    controllerFile.Contains($"{_sep}bin{_sep}"))
+                {
+                    continue;
+                }
+                
+                logger.LogTrace("Scanning controller: {ControllerFile}", controllerFile);
+                var content = await File.ReadAllTextAsync(controllerFile);
+                var keys = viewMetadataExtractor.ExtractKeys(content);
+                
+                foreach (var key in keys)
+                {
+                    allKeys.Add(key);
+                    logger.LogTrace("Found key: \"{Key}\" in {File}", key, Path.GetFileName(controllerFile));
+                }
             }
         }
-        
-        logger.LogInformation("Found {Count} unique strings to inject", allKeys.Count);
-        
+
         if (allKeys.Count == 0)
         {
-            logger.LogInformation("No strings found to inject");
+            logger.LogInformation("No strings found to inject from Controllers");
+        }
+
+        // 1.5) Scan all ViewModel files
+        // We assume ViewModels are in "Models" folder or subfolders, and end with "ViewModel.cs"
+        var modelsInputPath = Path.Combine(path, "Models");
+        if (Directory.Exists(modelsInputPath))
+        {
+            var viewModelFiles = Directory.GetFileSystemEntries(modelsInputPath, "*ViewModel.cs", SearchOption.AllDirectories);
+            foreach (var viewModelFile in viewModelFiles)
+            {
+                if (viewModelFile.Contains($"{_sep}obj{_sep}") ||
+                    viewModelFile.Contains($"{_sep}bin{_sep}"))
+                {
+                    continue;
+                }
+
+                logger.LogTrace("Scanning ViewModel: {ViewModelFile}", viewModelFile);
+                var content = await File.ReadAllTextAsync(viewModelFile);
+                var keys = viewMetadataExtractor.ExtractKeys(content);
+
+                foreach (var key in keys)
+                {
+                    allKeys.Add(key);
+                    logger.LogTrace("Found key: \"{Key}\" in {File}", key, Path.GetFileName(viewModelFile));
+                }
+            }
+        }
+        
+        logger.LogInformation("Found total {Count} unique strings to inject (Controllers + ViewModels)", allKeys.Count);
+
+        if (allKeys.Count == 0)
+        {
+            logger.LogInformation("No strings found to inject from Controllers or ViewModels");
             return;
         }
         

@@ -87,6 +87,19 @@ Options:
 * `-k`, `--skip-existing-files`: Skip existing files.
 
 
+## Auto-generate View Injections
+
+This command scans your project for localizable strings in Controllers and ViewModels, specifically looking for:
+
+* `[RenderInNavBar]` attributes (properties: `NavGroupName`, `CascadedLinksGroupName`, `LinkText`)
+* `PageTitle` assignments in ViewModels (e.g., `PageTitle = "Dashboard"`)
+
+It then injects these strings into a `ViewModelArgsInjector` service to ensure they can be picked up by the localizer.
+
+```bash
+dotlang auto-generate-view-injections-for-aiursoft-template --path .
+```
+
 ## Use as a library
 
 You can also use the core logic as a library in your own project.
@@ -122,7 +135,7 @@ services.AddScoped<TranslateEntry>();
 services.AddScoped<DataAnnotationKeyExtractor>();
 services.AddScoped<CshtmlLocalizer>();
 services.AddScoped<CSharpKeyExtractor>();
-services.AddScoped<RenderInNavBarExtractor>();
+services.AddScoped<ViewMetadataExtractor>();
 services.AddTransient<DocumentAnalyser>();
 
 new StartUp().ConfigureServices(services);
