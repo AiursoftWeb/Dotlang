@@ -71,13 +71,15 @@ public class GenerateResxForViewsHandler : ExecutableCommandHandlerBuilder
                 options.OllamaToken = context.GetValue(OllamaTokenOption)!;
             });
         });
-        var sp = hostBuilder.Build().Services;
+        var host = hostBuilder.Build();
+        var sp = host.Services;
+        var cancellationToken = sp.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
         var entry = sp.GetRequiredService<TranslateEntry>();
         var targetLangsArray = targetLangs
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(lang => lang.Trim())
             .ToArray();
-        return entry.StartLocalizeContentInCsHtmlAsync(path, targetLangsArray, !dryRun, concurrentRequests);
+        return entry.StartLocalizeContentInCsHtmlAsync(path, targetLangsArray, !dryRun, concurrentRequests, cancellationToken);
     }
 
     protected override Option[] GetCommandOptions()

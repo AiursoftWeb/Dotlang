@@ -33,37 +33,41 @@ public class TranslateEntry(
     }
 
     public async Task StartLocalizeContentInCsHtmlAsync(string path, string[] langs, bool takeAction,
-        int concurentRequests)
+        int concurentRequests, CancellationToken cancellationToken = default)
     {
         EnsureCsprojFileExistsAsync(path, false);
         foreach (var lang in langs)
         {
+            if (cancellationToken.IsCancellationRequested) break;
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             logger.LogTrace("Starting localization in CSHTML for language: {Lang}", lang);
             var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
             foreach (var cshtml in cshtmls)
             {
+                if (cancellationToken.IsCancellationRequested) break;
                 var fileName = Path.GetFileName(cshtml);
                 if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
                     continue;
 
                 logger.LogTrace("Localizing content in CSHTML file: {Cshtml}", cshtml);
-                await LocalizeContentInCsHtml(cshtml, lang, takeAction, concurentRequests);
+                await LocalizeContentInCsHtml(cshtml, lang, takeAction, concurentRequests, cancellationToken);
             }
         }
     }
 
     public async Task StartLocalizeContentInCSharpAsync(string path, string[] langs, bool takeAction,
-        int concurrentRequests)
+        int concurrentRequests, CancellationToken cancellationToken = default)
     {
         EnsureCsprojFileExistsAsync(path, false);
         foreach (var lang in langs)
         {
+            if (cancellationToken.IsCancellationRequested) break;
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             logger.LogTrace("Starting localization in C# for language: {Lang}", lang);
             var csharpFiles = Directory.GetFileSystemEntries(path, "*.cs", SearchOption.AllDirectories);
             foreach (var csFile in csharpFiles)
             {
+                if (cancellationToken.IsCancellationRequested) break;
                 if (csFile.EndsWith(".Designer.cs") ||
                     csFile.Contains($"{_sep}obj{_sep}") ||
                     csFile.Contains($"{_sep}bin{_sep}"))
@@ -72,23 +76,25 @@ public class TranslateEntry(
                 }
 
                 logger.LogTrace("Localizing content in C# file: {CsFile}", csFile);
-                await LocalizeContentInCSharp(path, csFile, lang, takeAction, concurrentRequests);
+                await LocalizeContentInCSharp(path, csFile, lang, takeAction, concurrentRequests, cancellationToken);
             }
         }
     }
 
     public async Task StartLocalizeDataAnnotationsAsync(string path, string[] langs, bool takeAction,
-        int concurrentRequests)
+        int concurrentRequests, CancellationToken cancellationToken = default)
     {
         EnsureCsprojFileExistsAsync(path, false);
         foreach (var lang in langs)
         {
+            if (cancellationToken.IsCancellationRequested) break;
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             logger.LogTrace("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
             var modelsPath = Path.Combine(path, "Models");
             var csharpFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
             foreach (var csFile in csharpFiles)
             {
+                if (cancellationToken.IsCancellationRequested) break;
                 if (csFile.EndsWith(".Designer.cs") ||
                     csFile.Contains($"{_sep}obj{_sep}") ||
                     csFile.Contains($"{_sep}bin{_sep}"))
@@ -97,7 +103,7 @@ public class TranslateEntry(
                 }
 
                 logger.LogTrace("Localizing DataAnnotations in C# file: {CsFile}", csFile);
-                await LocalizeContentForDataAnnotationAsync(path, csFile, lang, takeAction, concurrentRequests);
+                await LocalizeContentForDataAnnotationAsync(path, csFile, lang, takeAction, concurrentRequests, cancellationToken);
             }
         }
     }
@@ -132,7 +138,7 @@ public class TranslateEntry(
     }
 
     private async Task LocalizeContentInCSharp(string projectPath, string csPath, string lang, bool takeAction,
-        int concurrentRequests)
+        int concurrentRequests, CancellationToken cancellationToken)
     {
         if (!File.Exists(csPath))
         {
@@ -140,7 +146,7 @@ public class TranslateEntry(
             return;
         }
 
-        var original = await File.ReadAllTextAsync(csPath);
+        var original = await File.ReadAllTextAsync(csPath, cancellationToken);
         if (string.IsNullOrWhiteSpace(original))
         {
             logger.LogWarning("File is empty: {CsPath}", csPath);
@@ -161,7 +167,7 @@ public class TranslateEntry(
         logger.LogTrace("Resx path: {Resx}", xmlPath);
 
         // 3) Load what’s already been translated
-        var existing = await GetResxContentsAsync(xmlPath);
+        var existing = await GetResxContentsAsync(xmlPath, cancellationToken);
 
         // 4) Find keys that aren’t yet in the .resx
         var missingKeys = keys
@@ -176,7 +182,7 @@ public class TranslateEntry(
             if (takeAction && existing.Count > 0)
             {
                 var xml = GenerateXml(existing);
-                await File.WriteAllTextAsync(xmlPath, xml);
+                await File.WriteAllTextAsync(xmlPath, xml, cancellationToken);
             }
             return;
         }
@@ -191,7 +197,8 @@ public class TranslateEntry(
                 var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
                     sourceContent: original,
                     word: key,
-                    language: lang);
+                    language: lang,
+                    cancellationToken: cancellationToken);
                 var trimmed = translated.Trim();
                 lock (newPairs)
                 {
@@ -215,11 +222,11 @@ public class TranslateEntry(
         }
 
         var finalXml = GenerateXml(existing);
-        await File.WriteAllTextAsync(xmlPath, finalXml);
+        await File.WriteAllTextAsync(xmlPath, finalXml, cancellationToken);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 
-    private async Task LocalizeContentInCsHtml(string cshtmlPath, string lang, bool takeAction, int concurentRequests)
+    private async Task LocalizeContentInCsHtml(string cshtmlPath, string lang, bool takeAction, int concurentRequests, CancellationToken cancellationToken)
     {
         if (!File.Exists(cshtmlPath))
         {
@@ -228,7 +235,7 @@ public class TranslateEntry(
         }
 
         // Read the original content
-        var original = await File.ReadAllTextAsync(cshtmlPath);
+        var original = await File.ReadAllTextAsync(cshtmlPath, cancellationToken);
         if (string.IsNullOrWhiteSpace(original))
         {
             logger.LogWarning("File is empty: {CshtmlPath}", cshtmlPath);
@@ -249,7 +256,7 @@ public class TranslateEntry(
         logger.LogTrace("Resx path: {Resx}", xmlPath);
 
         // 3) load what’s already been translated
-        var existing = await GetResxContentsAsync(xmlPath);
+        var existing = await GetResxContentsAsync(xmlPath, cancellationToken);
 
         // 4) find keys that aren’t yet in the .resx
         var missingKeys = keys
@@ -264,7 +271,7 @@ public class TranslateEntry(
             if (takeAction && existing.Count > 0)
             {
                 var xml = GenerateXml(existing);
-                await File.WriteAllTextAsync(xmlPath, xml);
+                await File.WriteAllTextAsync(xmlPath, xml, cancellationToken);
             }
             return;
         }
@@ -279,7 +286,8 @@ public class TranslateEntry(
                 var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
                     sourceContent: original,
                     word: key,
-                    language: lang);
+                    language: lang,
+                    cancellationToken: cancellationToken);
                 var trimmed = translated.Trim();
                 lock (newPairs)
                 {
@@ -303,11 +311,11 @@ public class TranslateEntry(
         }
 
         var finalXml = GenerateXml(existing);
-        await File.WriteAllTextAsync(xmlPath, finalXml);
+        await File.WriteAllTextAsync(xmlPath, finalXml, cancellationToken);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 
-    private async Task<Dictionary<string, string>> GetResxContentsAsync(string path)
+    private async Task<Dictionary<string, string>> GetResxContentsAsync(string path, CancellationToken cancellationToken)
     {
         if (path.StartsWith("~"))
         {
@@ -330,6 +338,7 @@ public class TranslateEntry(
             using var reader = XmlReader.Create(path, settings);
             while (await reader.ReadAsync())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (reader is { NodeType: XmlNodeType.Element, Name: "data" })
                 {
                     var key = reader.GetAttribute("name");
@@ -338,6 +347,7 @@ public class TranslateEntry(
                     var value = string.Empty;
                     while (await reader.ReadAsync())
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         if (reader is { NodeType: XmlNodeType.Element, Name: "value" })
                         {
                             value = await reader.ReadElementContentAsStringAsync();
@@ -388,7 +398,7 @@ public class TranslateEntry(
         return template.Replace("{{CONTENT}}", sb.ToString());
     }
 
-    public async Task StartWrapWithLocalizerAsync(string path, bool takeAction)
+    public async Task StartWrapWithLocalizerAsync(string path, bool takeAction, CancellationToken cancellationToken = default)
     {
         path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 
@@ -396,16 +406,17 @@ public class TranslateEntry(
         var cshtmls = Directory.GetFileSystemEntries(path, "*.cshtml", SearchOption.AllDirectories);
         foreach (var cshtml in cshtmls)
         {
+            if (cancellationToken.IsCancellationRequested) break;
             var fileName = Path.GetFileName(cshtml);
             if (fileName.Contains("_ViewStart") || fileName.Contains("_ViewImports"))
                 continue;
 
             logger.LogInformation("Wrapping file with Localizer: {Cshtml}", cshtml);
-            await WrapWithLocalizerAsync(cshtml, takeAction);
+            await WrapWithLocalizerAsync(cshtml, takeAction, cancellationToken);
         }
     }
 
-    private async Task WrapWithLocalizerAsync(string cshtmlPath, bool takeAction)
+    private async Task WrapWithLocalizerAsync(string cshtmlPath, bool takeAction, CancellationToken cancellationToken)
     {
         if (!File.Exists(cshtmlPath))
         {
@@ -414,7 +425,7 @@ public class TranslateEntry(
         }
 
         // Read the original content
-        var original = await File.ReadAllTextAsync(cshtmlPath);
+        var original = await File.ReadAllTextAsync(cshtmlPath, cancellationToken);
         if (string.IsNullOrWhiteSpace(original))
         {
             logger.LogWarning("File is empty: {CshtmlPath}", cshtmlPath);
@@ -429,7 +440,7 @@ public class TranslateEntry(
                 logger.LogInformation("Wrapped key: \"{Key}\" in {View}", key, cshtmlPath);
             }
 
-            await File.WriteAllTextAsync(cshtmlPath, processed);
+            await File.WriteAllTextAsync(cshtmlPath, processed, cancellationToken);
         }
         else
         {
@@ -438,7 +449,7 @@ public class TranslateEntry(
     }
 
     private async Task LocalizeContentForDataAnnotationAsync(string projectPath, string csPath, string lang,
-        bool takeAction, int concurrentRequests)
+        bool takeAction, int concurrentRequests, CancellationToken cancellationToken)
     {
         if (!File.Exists(csPath))
         {
@@ -446,7 +457,7 @@ public class TranslateEntry(
             return;
         }
 
-        var original = await File.ReadAllTextAsync(csPath);
+        var original = await File.ReadAllTextAsync(csPath, cancellationToken);
         if (string.IsNullOrWhiteSpace(original))
         {
             logger.LogWarning("File is empty: {CsPath}", csPath);
@@ -468,7 +479,7 @@ public class TranslateEntry(
         logger.LogTrace("Resx path: {Resx}", xmlPath);
 
         // 3) Load what’s already been translated
-        var existing = await GetResxContentsAsync(xmlPath);
+        var existing = await GetResxContentsAsync(xmlPath, cancellationToken);
 
         // 4) Find keys that aren’t yet in the .resx
         var missingKeys = keys
@@ -483,7 +494,7 @@ public class TranslateEntry(
             if (takeAction && existing.Count > 0)
             {
                 var xml = GenerateXml(existing);
-                await File.WriteAllTextAsync(xmlPath, xml);
+                await File.WriteAllTextAsync(xmlPath, xml, cancellationToken);
             }
             return;
         }
@@ -498,7 +509,8 @@ public class TranslateEntry(
                 var translated = await ollamaTranslate.TranslateWordInParagraphAsync(
                     sourceContent: original,
                     word: key,
-                    language: lang);
+                    language: lang,
+                    cancellationToken: cancellationToken);
                 var trimmed = translated.Trim();
                 lock (newPairs)
                 {
@@ -522,11 +534,11 @@ public class TranslateEntry(
         }
 
         var finalXml = GenerateXml(existing);
-        await File.WriteAllTextAsync(xmlPath, finalXml);
+        await File.WriteAllTextAsync(xmlPath, finalXml, cancellationToken);
         logger.LogInformation("Wrote resource file: {Resx}", xmlPath);
     }
 
-    public async Task AutoGenerateViewInjectionsAsync(string path, bool takeAction)
+    public async Task AutoGenerateViewInjectionsAsync(string path, bool takeAction, CancellationToken cancellationToken = default)
     {
         EnsureCsprojFileExistsAsync(path, false);
         path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
@@ -546,6 +558,7 @@ public class TranslateEntry(
             var controllerFiles = Directory.GetFileSystemEntries(controllersPath, "*.cs", SearchOption.AllDirectories);
             foreach (var controllerFile in controllerFiles)
             {
+                if (cancellationToken.IsCancellationRequested) break;
                 if (controllerFile.EndsWith(".Designer.cs") ||
                     controllerFile.Contains($"{_sep}obj{_sep}") ||
                     controllerFile.Contains($"{_sep}bin{_sep}"))
@@ -554,7 +567,7 @@ public class TranslateEntry(
                 }
                 
                 logger.LogTrace("Scanning controller: {ControllerFile}", controllerFile);
-                var content = await File.ReadAllTextAsync(controllerFile);
+                var content = await File.ReadAllTextAsync(controllerFile, cancellationToken);
                 var keys = viewMetadataExtractor.ExtractKeys(content);
                 
                 foreach (var key in keys)
@@ -565,10 +578,7 @@ public class TranslateEntry(
             }
         }
 
-        if (allKeys.Count == 0)
-        {
-            logger.LogInformation("No strings found to inject from Controllers");
-        }
+        if (cancellationToken.IsCancellationRequested) return;
 
         // 1.5) Scan all ViewModel files
         // We assume ViewModels are in "Models" folder or subfolders, and end with "ViewModel.cs"
@@ -578,6 +588,7 @@ public class TranslateEntry(
             var viewModelFiles = Directory.GetFileSystemEntries(modelsInputPath, "*ViewModel.cs", SearchOption.AllDirectories);
             foreach (var viewModelFile in viewModelFiles)
             {
+                if (cancellationToken.IsCancellationRequested) break;
                 if (viewModelFile.Contains($"{_sep}obj{_sep}") ||
                     viewModelFile.Contains($"{_sep}bin{_sep}"))
                 {
@@ -585,7 +596,7 @@ public class TranslateEntry(
                 }
 
                 logger.LogTrace("Scanning ViewModel: {ViewModelFile}", viewModelFile);
-                var content = await File.ReadAllTextAsync(viewModelFile);
+                var content = await File.ReadAllTextAsync(viewModelFile, cancellationToken);
                 var keys = viewMetadataExtractor.ExtractKeys(content);
 
                 foreach (var key in keys)
@@ -596,6 +607,8 @@ public class TranslateEntry(
             }
         }
         
+        if (cancellationToken.IsCancellationRequested) return;
+
         logger.LogInformation("Found total {Count} unique strings to inject (Controllers + ViewModels)", allKeys.Count);
 
         if (allKeys.Count == 0)
@@ -622,7 +635,7 @@ public class TranslateEntry(
         logger.LogInformation("Found ViewModelArgsInjector at: {Path}", viewModelArgsInjectorPath);
         
         // 3) Read the file and parse it
-        var originalContent = await File.ReadAllTextAsync(viewModelArgsInjectorPath);
+        var originalContent = await File.ReadAllTextAsync(viewModelArgsInjectorPath, cancellationToken);
         
         // Find the _useless_for_localizer method using regex
         var methodPattern = @"private\s+void\s+_useless_for_localizer\s*\(\s*\)\s*\{[^}]*\}";
@@ -685,7 +698,7 @@ public class TranslateEntry(
                              newMethodContent + 
                              originalContent.Substring(methodMatch.Index + methodMatch.Length);
         
-        await File.WriteAllTextAsync(viewModelArgsInjectorPath, updatedContent);
+        await File.WriteAllTextAsync(viewModelArgsInjectorPath, updatedContent, cancellationToken);
         logger.LogInformation("Successfully injected {Count} new keys into ViewModelArgsInjector._useless_for_localizer()", newKeys.Count);
     }
 }
