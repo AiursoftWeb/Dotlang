@@ -34,7 +34,7 @@ namespace Aiursoft.Dotlang.Tests
             var method = typeof(TranslateEntry).GetMethod("LocalizeContentInCSharp", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null) Assert.Fail("Method LocalizeContentInCSharp not found");
 
-            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1 })!;
+            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1, CancellationToken.None })!;
 
             // Assert
             var expectedResxPath = Path.Combine(resourcesDir, "NoKeys.zh-CN.resx");

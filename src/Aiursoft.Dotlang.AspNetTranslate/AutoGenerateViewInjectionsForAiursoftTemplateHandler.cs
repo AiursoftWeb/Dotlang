@@ -30,9 +30,11 @@ public class AutoGenerateViewInjectionsForAiursoftTemplateHandler : ExecutableCo
                 options.OllamaToken = string.Empty;
             });
         });
-        var sp = hostBuilder.Build().Services;
+        var host = hostBuilder.Build();
+        var sp = host.Services;
+        var cancellationToken = sp.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
         var entry = sp.GetRequiredService<TranslateEntry>();
-        return entry.AutoGenerateViewInjectionsAsync(path, !dryRun);
+        return entry.AutoGenerateViewInjectionsAsync(path, !dryRun, cancellationToken);
     }
 
     protected override Option[] GetCommandOptions()

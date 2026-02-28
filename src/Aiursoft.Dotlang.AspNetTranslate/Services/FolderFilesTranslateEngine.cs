@@ -11,7 +11,8 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
         string language,
         bool recursive,
         string[] extensions,
-        bool skipExistingFiles)
+        bool skipExistingFiles,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
             "Translating files from {sourceFolder} to {lang} and will be saved to {destinationFolder}.", sourceFolder,
@@ -30,6 +31,11 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
 
         foreach (var sourceFile in sourceIFilesToTranslate)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
             var destinationFile = sourceFile.Replace(sourceFolder, destinationFolder);
 
             if (skipExistingFiles && File.Exists(destinationFile))
@@ -38,12 +44,13 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
                 continue;
             }
 
-            var sourceContent = await File.ReadAllTextAsync(sourceFile);
+            var sourceContent = await File.ReadAllTextAsync(sourceFile, cancellationToken);
 
             logger.LogInformation("Translating {sourceFile}...", sourceFile);
             var translatedContent = await ollamaTranslateEngine.TranslateAsync(
                 sourceContent,
-                language);
+                language,
+                cancellationToken);
             
             var destinationDirectory = Path.GetDirectoryName(destinationFile);
             if (!Directory.Exists(destinationDirectory))
@@ -52,7 +59,7 @@ public class FolderFilesTranslateEngine(ILogger<FolderFilesTranslateEngine> logg
             }
 
             logger.LogInformation("Saving translated content to {destinationFile}...", destinationFile);
-            await File.WriteAllTextAsync(destinationFile, translatedContent);
+            await File.WriteAllTextAsync(destinationFile, translatedContent, cancellationToken);
         }
     }
 }
