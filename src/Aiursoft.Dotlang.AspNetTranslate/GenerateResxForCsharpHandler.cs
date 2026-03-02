@@ -71,7 +71,9 @@ public class GenerateResxForCsharpHandler : ExecutableCommandHandlerBuilder
                 options.OllamaToken = context.GetValue(OllamaTokenOption)!;
             });
         });
-        var sp = hostBuilder.Build().Services;
+        var host = hostBuilder.Build();
+        var sp = host.Services;
+        var cancellationToken = sp.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
         var entry = sp.GetRequiredService<TranslateEntry>();
         var targetLangsArray = targetLangs
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -79,7 +81,7 @@ public class GenerateResxForCsharpHandler : ExecutableCommandHandlerBuilder
             .ToArray();
 
         // Calling the new method for C# files. This method does not exist yet.
-        return entry.StartLocalizeContentInCSharpAsync(path, targetLangsArray, !dryRun, concurrentRequests);
+        return entry.StartLocalizeContentInCSharpAsync(path, targetLangsArray, !dryRun, concurrentRequests, cancellationToken);
     }
 
     protected override Option[] GetCommandOptions()

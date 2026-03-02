@@ -10,12 +10,13 @@ public class CachedTranslateEngine(
     public virtual async Task<string> TranslateWordInParagraphAsync(
         string sourceContent,
         string word,
-        string language)
+        string language,
+        CancellationToken cancellationToken = default)
     {
         return await cache.RunWithCache(
             $"translate-word-{language}-{sourceContent.GetHashCode()}-{word.GetHashCode()}-cache",
             () =>
-                retryEngine.RunWithRetry(_ => engine.TranslateWordInParagraphAsync(sourceContent, word, language), attempts: 5)
+                retryEngine.RunWithRetry(_ => engine.TranslateWordInParagraphAsync(sourceContent, word, language, cancellationToken), attempts: 5)
         );
     }
 }

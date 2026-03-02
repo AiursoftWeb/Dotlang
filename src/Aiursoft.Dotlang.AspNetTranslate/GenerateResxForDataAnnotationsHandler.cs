@@ -71,7 +71,9 @@ public class GenerateResxForDataAnnotationsHandler : ExecutableCommandHandlerBui
                 options.OllamaToken = context.GetValue(OllamaTokenOption)!;
             });
         });
-        var sp = hostBuilder.Build().Services;
+        var host = hostBuilder.Build();
+        var sp = host.Services;
+        var cancellationToken = sp.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
         var entry = sp.GetRequiredService<TranslateEntry>();
         var targetLangsArray = targetLangs
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -79,7 +81,7 @@ public class GenerateResxForDataAnnotationsHandler : ExecutableCommandHandlerBui
             .ToArray();
 
         // Calling the new method for DataAnnotations. This method does not exist yet.
-        return entry.StartLocalizeDataAnnotationsAsync(path, targetLangsArray, !dryRun, concurrentRequests);
+        return entry.StartLocalizeDataAnnotationsAsync(path, targetLangsArray, !dryRun, concurrentRequests, cancellationToken);
     }
 
     protected override Option[] GetCommandOptions()

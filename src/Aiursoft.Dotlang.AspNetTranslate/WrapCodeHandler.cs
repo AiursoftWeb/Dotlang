@@ -30,9 +30,11 @@ public class WrapCodeHandler : ExecutableCommandHandlerBuilder
                 options.OllamaToken = string.Empty;
             });
         });
-        var sp = hostBuilder.Build().Services;
+        var host = hostBuilder.Build();
+        var sp = host.Services;
+        var cancellationToken = sp.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
         var entry = sp.GetRequiredService<TranslateEntry>();
-        return entry.StartWrapWithLocalizerAsync(path, !dryRun);
+        return entry.StartWrapWithLocalizerAsync(path, !dryRun, cancellationToken);
     }
 
     protected override Option[] GetCommandOptions()

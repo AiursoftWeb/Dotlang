@@ -123,7 +123,9 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
                 options.OllamaToken = context.GetValue(OllamaTokenOption)!;
             });
         });
-        var sp = hostBuilder.Build().Services;
+        var host = hostBuilder.Build();
+        var sp = host.Services;
+        var cancellationToken = sp.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
 
         var translateEngine = sp.GetRequiredService<FolderFilesTranslateEngine>();
 
@@ -140,6 +142,7 @@ public class FolderTranslateHandler : ExecutableCommandHandlerBuilder
             language: language,
             recursive: recursive,
             extensions: extensions,
-            skipExistingFiles: skipExistingFiles);
+            skipExistingFiles: skipExistingFiles,
+            cancellationToken: cancellationToken);
     }
 }

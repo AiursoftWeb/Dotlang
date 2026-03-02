@@ -62,7 +62,8 @@ public class OllamaBasedTranslatorEngine(
 
     public async Task<string> TranslateAsync(
         string sourceContent,
-        string language)
+        string language,
+        CancellationToken cancellationToken = default)
     {
         var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName)
             ? $"{language}, {fullName}"
@@ -74,7 +75,7 @@ public class OllamaBasedTranslatorEngine(
         {
             if (chunk.Type == ChunkType.Translatable)
             {
-                var translated = await TranslateSingleChunkAsync(chunk.Content, targetLanguage);
+                var translated = await TranslateSingleChunkAsync(chunk.Content, targetLanguage, cancellationToken);
                 result.Append(translated);
             }
             else
@@ -87,7 +88,8 @@ public class OllamaBasedTranslatorEngine(
 
     private async Task<string> TranslateSingleChunkAsync(
         string sourceContent,
-        string targetLanguage)
+        string targetLanguage,
+        CancellationToken cancellationToken)
     {
         var leadingWhitespace = new string(sourceContent.TakeWhile(char.IsWhiteSpace).ToArray());
         var trailingWhitespace = new string(sourceContent.Reverse().TakeWhile(char.IsWhiteSpace).Reverse().ToArray());
@@ -118,7 +120,7 @@ public class OllamaBasedTranslatorEngine(
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken,
-                CancellationToken.None);
+                cancellationToken);
             var resultText = result.GetAnswerPart();
             if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))
             {
@@ -142,7 +144,8 @@ public class OllamaBasedTranslatorEngine(
     public async Task<string> TranslateWordInParagraphAsync(
         string sourceContent,
         string word,
-        string language)
+        string language,
+        CancellationToken cancellationToken = default)
     {
         var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName) 
             ? $"{language}, {fullName}" 
@@ -178,7 +181,7 @@ public class OllamaBasedTranslatorEngine(
             trimmedWord, language, options.Value.OllamaInstance, options.Value.OllamaModel);
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
-            var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, CancellationToken.None);
+            var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, cancellationToken);
             var resultText = result.GetAnswerPart();
 
             if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))

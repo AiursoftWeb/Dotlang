@@ -33,8 +33,8 @@ public class CaseTest {
 }");
 
             var mockEngine = new Mock<CachedTranslateEngine>(null!, null!, null!);
-            mockEngine.Setup(x => x.TranslateWordInParagraphAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync((string _, string w, string _) => w);
+            mockEngine.Setup(x => x.TranslateWordInParagraphAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string _, string w, string _, CancellationToken _) => w);
 
             var entry = new TranslateEntry(
                 new DataAnnotationKeyExtractor(),
@@ -50,7 +50,7 @@ public class CaseTest {
             var method = typeof(TranslateEntry).GetMethod("LocalizeContentInCSharp", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null) Assert.Fail("Method LocalizeContentInCSharp not found");
 
-            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1 })!;
+            await (Task)method.Invoke(entry, new object[] { tempDir, dummyCsPath, "zh-CN", true, 1, CancellationToken.None })!;
 
             // Assert
             var expectedResxPath = Path.Combine(resourcesDir, "CaseTest.zh-CN.resx");
