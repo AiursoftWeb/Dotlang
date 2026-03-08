@@ -121,21 +121,7 @@ public class OllamaBasedTranslatorEngine(
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken,
                 cancellationToken);
-            var resultText = result.GetAnswerPart();
-            if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))
-            {
-                throw new InvalidOperationException(
-                    "The translation result is not wrapped in code block. Please check the input content and language.");
-            }
-
-            var resultTextWithoutCodeBlock = resultText.Trim().Trim('`').Trim('\n', '\r');
-            if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
-            {
-                throw new InvalidOperationException(
-                    "The translation result is empty. Please check the input content and language.");
-            }
-
-            return resultTextWithoutCodeBlock;
+            return ExtractTranslation(result.GetAnswerPart());
         }, attempts: 5);
         logger.LogInformation(@"Ollama translation result: ""{result}""", aiResponseRaw);
         return leadingWhitespace + aiResponseRaw + trailingWhitespace;
@@ -182,23 +168,51 @@ public class OllamaBasedTranslatorEngine(
         var aiResponseRaw = await retryEngine.RunWithRetry(async _ =>
         {
             var result = await chatClient.AskModel(content, options.Value.OllamaInstance, options.Value.OllamaToken, cancellationToken);
-            var resultText = result.GetAnswerPart();
-
-            if (!resultText.Trim().StartsWith("```") || !resultText.Trim().EndsWith("```"))
-            {
-                throw new InvalidOperationException(
-                    "The translation result is not wrapped in code block. Please check the input content and language.");
-            }
-            var resultTextWithoutCodeBlock = resultText.Trim().Trim('`').Trim('\n', '\r');
-            if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
-            {
-                throw new InvalidOperationException(
-                    "The translation result is empty. Please check the input content and language.");
-            }
-
-            return resultTextWithoutCodeBlock;
+            return ExtractTranslation(result.GetAnswerPart());
         }, attempts: 5);
         logger.LogInformation(@"Ollama translation result of ""{trimmedWord}"" is ""{result}""", trimmedWord, aiResponseRaw);
         return leadingWhitespace + aiResponseRaw + trailingWhitespace;
+    }
+
+    private string ExtractTranslation(string rawResult)
+    {
+        var resultText = rawResult.Trim();
+        var start = resultText.IndexOf("```", StringComparison.Ordinal);
+        var end = resultText.LastIndexOf("```", StringComparison.Ordinal);
+
+        if (start >= 0 && end > start)
+        {
+            resultText = resultText.Substring(start, end - start + 3);
+        }
+
+        if (!resultText.StartsWith("```") || !resultText.EndsWith("```"))
+        {
+            throw new InvalidOperationException(
+                $"The translation result is not wrapped in code block. Please check the input content and language. Actual result: \n{rawResult}");
+        }
+
+        var inner = resultText.Substring(3, resultText.Length - 6);
+        if (!inner.StartsWith("\n") && !inner.StartsWith("\r"))
+        {
+            var firstNewLine = inner.IndexOf('\n');
+            if (firstNewLine >= 0)
+            {
+                var firstLine = inner.Substring(0, firstNewLine).Trim();
+                if (firstLine.All(c => char.IsLetterOrDigit(c) || c == '-'))
+                {
+                    inner = inner.Substring(firstNewLine + 1);
+                }
+            }
+        }
+
+        var resultTextWithoutCodeBlock = inner.Trim('\n', '\r');
+
+        if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
+        {
+            throw new InvalidOperationException(
+                $"The translation result is empty. Please check the input content and language. Actual result: \n{rawResult}");
+        }
+
+        return resultTextWithoutCodeBlock;
     }
 }
