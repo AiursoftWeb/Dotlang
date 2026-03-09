@@ -2,6 +2,8 @@ using Aiursoft.Dotlang.Shared;
 using Moq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Aiursoft.Canon;
+using Aiursoft.GptClient.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net.Http;
 
