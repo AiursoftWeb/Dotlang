@@ -94,6 +94,10 @@ public class OllamaBasedTranslatorEngine(
         var leadingWhitespace = new string(sourceContent.TakeWhile(char.IsWhiteSpace).ToArray());
         var trailingWhitespace = new string(sourceContent.Reverse().TakeWhile(char.IsWhiteSpace).Reverse().ToArray());
         var trimmedSource = sourceContent.Trim();
+        if (trimmedSource.Length > 2000)
+        {
+            trimmedSource = trimmedSource.Substring(0, 2000);
+        }
 
         if (string.IsNullOrWhiteSpace(trimmedSource))
         {
@@ -146,6 +150,16 @@ public class OllamaBasedTranslatorEngine(
             return word;
         }
 
+        // Limit context to 30 lines before and after the line containing the word.
+        var lines = sourceContent.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+        var targetLineIndex = Array.FindIndex(lines, l => l.Contains(trimmedWord));
+        if (targetLineIndex != -1)
+        {
+            var startLine = Math.Max(0, targetLineIndex - 30);
+            var endLine = Math.Min(lines.Length - 1, targetLineIndex + 30);
+            sourceContent = string.Join("\n", lines.Skip(startLine).Take(endLine - startLine + 1));
+        }
+
         var message = PromptWord
             .Replace("{CONTENT}", sourceContent)
             .Replace("{LANG}", targetLanguage)
@@ -174,25 +188,31 @@ public class OllamaBasedTranslatorEngine(
         return leadingWhitespace + aiResponseRaw + trailingWhitespace;
     }
 
-    private string ExtractTranslation(string rawResult)
+    internal string ExtractTranslation(string rawResult)
     {
         var resultText = rawResult.Trim();
         var start = resultText.IndexOf("```", StringComparison.Ordinal);
         var end = resultText.LastIndexOf("```", StringComparison.Ordinal);
 
-        if (start >= 0 && end > start)
+        string inner;
+        if (start >= 0)
         {
-            resultText = resultText.Substring(start, end - start + 3);
+            if (end > start)
+            {
+                inner = resultText.Substring(start + 3, end - start - 3);
+            }
+            else
+            {
+                // Found only one set of backticks, assume it's the opening one.
+                inner = resultText.Substring(start + 3);
+            }
+        }
+        else
+        {
+            // No backticks found, assume the whole response is the translation.
+            inner = resultText;
         }
 
-        if (!resultText.StartsWith("```") || !resultText.EndsWith("```"))
-        {
-            logger.LogWarning("LLM returned unexpected format. Raw string: {RawResult}", rawResult);
-            throw new InvalidOperationException(
-                $"The translation result is not wrapped in code block. Please check the input content and language. Actual result: \n{rawResult}");
-        }
-
-        var inner = resultText.Substring(3, resultText.Length - 6);
         if (!inner.StartsWith("\n") && !inner.StartsWith("\r"))
         {
             var firstNewLine = inner.IndexOf('\n');
@@ -206,7 +226,7 @@ public class OllamaBasedTranslatorEngine(
             }
         }
 
-        var resultTextWithoutCodeBlock = inner.Trim('\n', '\r');
+        var resultTextWithoutCodeBlock = inner.Trim('\n', '\r', ' ');
 
         if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
         {

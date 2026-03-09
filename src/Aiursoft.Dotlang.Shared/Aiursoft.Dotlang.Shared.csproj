@@ -22,6 +22,11 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Aiursoft.Dotlang.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Aiursoft.Canon" Version="10.0.3" />
     <PackageReference Include="Aiursoft.CommandFramework" Version="10.0.5" />
     <PackageReference Include="Aiursoft.GptClient" Version="10.0.9" />
