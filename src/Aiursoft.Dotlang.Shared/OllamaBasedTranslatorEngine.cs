@@ -187,6 +187,7 @@ public class OllamaBasedTranslatorEngine(
 
         if (!resultText.StartsWith("```") || !resultText.EndsWith("```"))
         {
+            logger.LogWarning("LLM returned unexpected format. Raw string: {RawResult}", rawResult);
             throw new InvalidOperationException(
                 $"The translation result is not wrapped in code block. Please check the input content and language. Actual result: \n{rawResult}");
         }
@@ -209,6 +210,7 @@ public class OllamaBasedTranslatorEngine(
 
         if (string.IsNullOrWhiteSpace(resultTextWithoutCodeBlock))
         {
+            logger.LogWarning("LLM returned empty translation result. Raw string: {RawResult}", rawResult);
             throw new InvalidOperationException(
                 $"The translation result is empty. Please check the input content and language. Actual result: \n{rawResult}");
         }
