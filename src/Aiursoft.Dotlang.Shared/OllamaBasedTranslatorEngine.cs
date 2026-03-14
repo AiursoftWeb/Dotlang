@@ -188,7 +188,7 @@ public class OllamaBasedTranslatorEngine(
         return leadingWhitespace + aiResponseRaw + trailingWhitespace;
     }
 
-    internal string ExtractTranslation(string rawResult)
+    public string ExtractTranslation(string rawResult)
     {
         var resultText = rawResult.Trim();
         var start = resultText.IndexOf("```", StringComparison.Ordinal);
