@@ -10,5 +10,6 @@ return await new NestedCommandApp()
     .WithFeature(new GenerateResxForDataAnnotationsHandler())
     .WithFeature(new WrapCodeHandler())
     .WithFeature(new AutoGenerateViewInjectionsForAiursoftTemplateHandler())
+    .WithFeature(new AutoDedupResxKeysHandler())
     .WithFeature(new FolderTranslateHandler())
     .RunAsync(args);

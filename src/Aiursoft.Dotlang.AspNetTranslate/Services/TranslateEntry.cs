@@ -701,4 +701,75 @@ public class TranslateEntry(
         await File.WriteAllTextAsync(viewModelArgsInjectorPath, updatedContent, cancellationToken);
         logger.LogInformation("Successfully injected {Count} new keys into ViewModelArgsInjector._useless_for_localizer()", newKeys.Count);
     }
+
+    public async Task AutoDedupResxKeysAsync(string path, bool takeAction, CancellationToken cancellationToken = default)
+    {
+        EnsureCsprojFileExistsAsync(path, false);
+        path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        
+        logger.LogInformation("Starting AutoDedupResxKeys at path: {Path}", path);
+
+        var resxFiles = Directory.GetFileSystemEntries(path, "*.resx", SearchOption.AllDirectories);
+        foreach (var resxFile in resxFiles)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
+            
+            var existing = await GetResxContentsAsync(resxFile, cancellationToken);
+            
+            var deduped = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var toRemove = new List<string>();
+            foreach (var kvp in existing)
+            {
+                if (!deduped.ContainsKey(kvp.Key))
+                {
+                    deduped[kvp.Key] = kvp.Value;
+                }
+                else
+                {
+                    toRemove.Add(kvp.Key);
+                }
+            }
+
+            int dataNodesCount = 0;
+            try
+            {
+                var settings = new XmlReaderSettings { IgnoreComments = true, IgnoreWhitespace = true };
+                using var reader = XmlReader.Create(resxFile, settings);
+                while (reader.Read())
+                {
+                    if (reader is { NodeType: XmlNodeType.Element, Name: "data" })
+                    {
+                        dataNodesCount++;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
+            if (toRemove.Count > 0 || dataNodesCount > deduped.Count)
+            {
+                logger.LogInformation("Found duplicates in {File}. Original keys: {OriginalCount}, Unique case-insensitive keys: {UniqueCount}", resxFile, dataNodesCount, deduped.Count);
+                if (toRemove.Count > 0)
+                {
+                    foreach (var key in toRemove)
+                    {
+                        logger.LogInformation("  - Removing case-insensitive duplicate: \"{Key}\"", key);
+                    }
+                }
+                
+                if (takeAction)
+                {
+                    var xml = GenerateXml(deduped);
+                    await File.WriteAllTextAsync(resxFile, xml, cancellationToken);
+                    logger.LogInformation("Successfully deduped {File}", resxFile);
+                }
+            }
+            else
+            {
+                logger.LogTrace("No duplicates found in {File}", resxFile);
+            }
+        }
+    }
 }
