@@ -20,9 +20,7 @@ namespace Aiursoft.Dotlang.Tests
             var resourcesDir = Path.Combine(tempDir, "Resources");
 
             // Cs file triggers "Go To" and "go to"
-            // "Go To" appears first.
-            // "go to" appears second.
-            // Expected: "Go To" is generated. "go to" is ignored (conflict).
+            // Both should be generated as they are different keys to IStringLocalizer
             var dummyCsPath = Path.Combine(tempDir, "CaseTest.cs");
             await File.WriteAllTextAsync(dummyCsPath, @"
 public class CaseTest { 
@@ -61,11 +59,8 @@ public class CaseTest {
 
             // Should contain "Go To"
             StringAssert.Contains(content, "name=\"Go To\"");
-            // Should NOT contain "go to" as a key
-            // Note: Since we are not doing strict valid XML parsing here but string check, 
-            // ensure we don't accidentally match part of something else.
-            // But "name=\"go to\"" is specific enough.
-            Assert.DoesNotContain("name=\"go to\"", content);
+            // Should ALSO contain "go to" as a key
+            StringAssert.Contains(content, "name=\"go to\"");
 
             Directory.Delete(tempDir, true);
         }
