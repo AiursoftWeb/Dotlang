@@ -111,27 +111,25 @@ public class TranslateEntry(
     private List<string> DeduplicateKeys(IEnumerable<string> rawKeys, string filePath)
     {
         var uniqueKeys = new List<string>();
-        // Key: lowercased/normalized key for collision check
-        // Value: the actual accepted key with original casing
-        var seen = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var seenExact = new HashSet<string>(StringComparer.Ordinal);
+        var seenIgnoreCase = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var k in rawKeys)
         {
             if (string.IsNullOrWhiteSpace(k)) continue;
 
-            if (seen.TryGetValue(k, out var existingKey))
+            if (!seenExact.Add(k)) continue; // Already saw this exact string.
+
+            if (seenIgnoreCase.TryGetValue(k, out var existingKey))
             {
-                // If we have seen this key (case-insensitive), check if it's the exact same string
-                if (!existingKey.Equals(k, StringComparison.Ordinal))
-                {
-                    logger.LogWarning("Key conflict detected in {File}: '{New}' ignored in favor of '{Existing}'",
-                        filePath, k, existingKey);
-                }
-                // If it is the exact same string, it's just a normal duplicate reference, ignore silently
-                continue;
+                logger.LogWarning("Key case inconsistency detected in {File}: '{New}' and '{Existing}' will both be added to resources. Consider unifying them to reduce translation effort.",
+                    filePath, k, existingKey);
+            }
+            else
+            {
+                seenIgnoreCase[k] = k;
             }
 
-            seen[k] = k;
             uniqueKeys.Add(k);
         }
         return uniqueKeys;
@@ -716,7 +714,7 @@ public class TranslateEntry(
             
             var existing = await GetResxContentsAsync(resxFile, cancellationToken);
             
-            var deduped = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var deduped = new Dictionary<string, string>(StringComparer.Ordinal);
             var toRemove = new List<string>();
             foreach (var kvp in existing)
             {
@@ -750,12 +748,12 @@ public class TranslateEntry(
 
             if (toRemove.Count > 0 || dataNodesCount > deduped.Count)
             {
-                logger.LogInformation("Found duplicates in {File}. Original keys: {OriginalCount}, Unique case-insensitive keys: {UniqueCount}", resxFile, dataNodesCount, deduped.Count);
+                logger.LogInformation("Found duplicates in {File}. Original keys: {OriginalCount}, Unique keys: {UniqueCount}", resxFile, dataNodesCount, deduped.Count);
                 if (toRemove.Count > 0)
                 {
                     foreach (var key in toRemove)
                     {
-                        logger.LogInformation("  - Removing case-insensitive duplicate: \"{Key}\"", key);
+                        logger.LogInformation("  - Removing duplicate: \"{Key}\"", key);
                     }
                 }
                 

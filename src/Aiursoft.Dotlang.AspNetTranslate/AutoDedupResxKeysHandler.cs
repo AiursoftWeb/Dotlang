@@ -13,7 +13,7 @@ public class AutoDedupResxKeysHandler : ExecutableCommandHandlerBuilder
 {
     protected override string Name => "auto-dedup-resx-keys";
 
-    protected override string Description => "The command to scan all .resx files in a directory and remove duplicate keys case-insensitively.";
+    protected override string Description => "The command to scan all .resx files in a directory and remove duplicate keys.";
 
      protected override Task Execute(ParseResult context)
     {
