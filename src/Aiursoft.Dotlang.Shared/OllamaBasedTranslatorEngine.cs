@@ -154,40 +154,54 @@ public class OllamaBasedTranslatorEngine(
 
         var buffer = new StringBuilder();
         var inCodeBlock = false;
+        var skippingHeader = false;
         var firstPart = true;
 
         await foreach (var chunk in chatClient.AskModelStream(content, options.Value.OllamaInstance, options.Value.OllamaToken, cancellationToken))
         {
             buffer.Append(chunk);
-            var currentText = buffer.ToString();
 
             if (!inCodeBlock)
             {
+                var currentText = buffer.ToString();
                 var codeBlockStart = currentText.IndexOf("```", StringComparison.Ordinal);
                 if (codeBlockStart >= 0)
                 {
                     inCodeBlock = true;
+                    skippingHeader = true;
                     // Drop everything before and including the opening backticks
                     buffer.Remove(0, codeBlockStart + 3);
-                    
-                    // Also drop potential language identifier (like ```markdown\n)
-                    currentText = buffer.ToString();
-                    var firstNewLine = currentText.IndexOf('\n');
-                    if (firstNewLine >= 0 && firstNewLine < 20) // Heuristic for language id length
-                    {
-                        buffer.Remove(0, firstNewLine + 1);
-                    }
                 }
             }
-            else
+
+            if (inCodeBlock && skippingHeader)
             {
-                var codeBlockEnd = buffer.ToString().IndexOf("```", StringComparison.Ordinal);
+                var currentText = buffer.ToString();
+                var firstNewLine = currentText.IndexOf('\n');
+                if (firstNewLine >= 0)
+                {
+                    // Found the newline, header is over.
+                    buffer.Remove(0, firstNewLine + 1);
+                    skippingHeader = false;
+                }
+                else if (currentText.Length > 20 || currentText.Contains(' '))
+                {
+                    // Too long or contains space, probably not a language identifier.
+                    skippingHeader = false;
+                }
+            }
+
+            if (inCodeBlock && !skippingHeader)
+            {
+                var currentText = buffer.ToString();
+                var codeBlockEnd = currentText.IndexOf("```", StringComparison.Ordinal);
                 if (codeBlockEnd >= 0)
                 {
-                    var resultPart = buffer.ToString().Substring(0, codeBlockEnd);
+                    var resultPart = currentText.Substring(0, codeBlockEnd);
                     yield return resultPart.Trim('\n', '\r');
                     buffer.Clear();
-                    break; // Done with this chunk
+                    inCodeBlock = false; // Reset for next potential chunk (though usually one per prompt)
+                    break; 
                 }
                 else
                 {
