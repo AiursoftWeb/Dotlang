@@ -86,6 +86,132 @@ public class OllamaBasedTranslatorEngine(
         return result.ToString();
     }
 
+    public async IAsyncEnumerable<string> TranslateStreamAsync(
+        string sourceContent,
+        string language,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var targetLanguage = LanguageMetadata.SupportedCultures.TryGetValue(language, out var fullName)
+            ? $"{language}, {fullName}"
+            : language;
+
+        var chunks = shredder.Shred(sourceContent);
+        foreach (var chunk in chunks)
+        {
+            if (chunk.Type == ChunkType.Translatable)
+            {
+                await foreach (var part in TranslateSingleChunkStreamAsync(chunk.Content, targetLanguage, cancellationToken))
+                {
+                    yield return part;
+                }
+            }
+            else
+            {
+                yield return chunk.Content;
+            }
+        }
+    }
+
+    private async IAsyncEnumerable<string> TranslateSingleChunkStreamAsync(
+        string sourceContent,
+        string targetLanguage,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var leadingWhitespace = new string(sourceContent.TakeWhile(char.IsWhiteSpace).ToArray());
+        var trailingWhitespace = new string(sourceContent.Reverse().TakeWhile(char.IsWhiteSpace).Reverse().ToArray());
+        var trimmedSource = sourceContent.Trim();
+        if (trimmedSource.Length > 2000)
+        {
+            trimmedSource = trimmedSource.Substring(0, 2000);
+        }
+
+        if (string.IsNullOrWhiteSpace(trimmedSource))
+        {
+            yield return sourceContent;
+            yield break;
+        }
+
+        yield return leadingWhitespace;
+
+        var message = Prompt.Replace("{CONTENT}", trimmedSource).Replace("{LANG}", targetLanguage);
+        var content = new OpenAiRequestModel
+        {
+            Model = options.Value.OllamaModel,
+            Stream = true,
+            Messages =
+            [
+                new MessagesItem
+                {
+                    Role = "user",
+                    Content = message
+                }
+            ]
+        };
+
+        logger.LogInformation(
+            @"Calling Ollama stream to translate: ""{trimmedSource}"", Instance: ""{instance}"", Model: ""{model}""",
+            trimmedSource, options.Value.OllamaInstance, options.Value.OllamaModel);
+
+        var buffer = new StringBuilder();
+        var inCodeBlock = false;
+        var firstPart = true;
+
+        await foreach (var chunk in chatClient.AskModelStream(content, options.Value.OllamaInstance, options.Value.OllamaToken, cancellationToken))
+        {
+            buffer.Append(chunk);
+            var currentText = buffer.ToString();
+
+            if (!inCodeBlock)
+            {
+                var codeBlockStart = currentText.IndexOf("```", StringComparison.Ordinal);
+                if (codeBlockStart >= 0)
+                {
+                    inCodeBlock = true;
+                    // Drop everything before and including the opening backticks
+                    buffer.Remove(0, codeBlockStart + 3);
+                    
+                    // Also drop potential language identifier (like ```markdown\n)
+                    currentText = buffer.ToString();
+                    var firstNewLine = currentText.IndexOf('\n');
+                    if (firstNewLine >= 0 && firstNewLine < 20) // Heuristic for language id length
+                    {
+                        buffer.Remove(0, firstNewLine + 1);
+                    }
+                }
+            }
+            else
+            {
+                var codeBlockEnd = buffer.ToString().IndexOf("```", StringComparison.Ordinal);
+                if (codeBlockEnd >= 0)
+                {
+                    var resultPart = buffer.ToString().Substring(0, codeBlockEnd);
+                    yield return resultPart.Trim('\n', '\r');
+                    buffer.Clear();
+                    inCodeBlock = false;
+                    break; // Done with this chunk
+                }
+                else
+                {
+                    // Still in code block, yield what we have so far if it's safe (not potentially part of closing backticks)
+                    var safeLength = buffer.Length - 3; 
+                    if (safeLength > 0)
+                    {
+                        var toYield = buffer.ToString().Substring(0, safeLength);
+                        if (firstPart)
+                        {
+                            toYield = toYield.TrimStart('\n', '\r');
+                            firstPart = false;
+                        }
+                        yield return toYield;
+                        buffer.Remove(0, safeLength);
+                    }
+                }
+            }
+        }
+
+        yield return trailingWhitespace;
+    }
+
     private async Task<string> TranslateSingleChunkAsync(
         string sourceContent,
         string targetLanguage,
