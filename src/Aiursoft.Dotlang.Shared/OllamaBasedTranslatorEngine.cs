@@ -200,7 +200,6 @@ public class OllamaBasedTranslatorEngine(
                     var resultPart = currentText.Substring(0, codeBlockEnd);
                     yield return resultPart.Trim('\n', '\r');
                     buffer.Clear();
-                    inCodeBlock = false; // Reset for next potential chunk (though usually one per prompt)
                     break; 
                 }
                 else
