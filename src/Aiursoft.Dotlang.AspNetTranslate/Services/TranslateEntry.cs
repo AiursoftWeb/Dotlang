@@ -324,7 +324,7 @@ public class TranslateEntry(
         if (!File.Exists(path))
             return new Dictionary<string, string>();
 
-        var resxContents = new Dictionary<string, string>();
+        var resxContents = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var settings = new XmlReaderSettings
         {
             IgnoreComments = true,
@@ -378,8 +378,18 @@ public class TranslateEntry(
             return string.Empty;
 
         var sb = new StringBuilder();
-        // Sort specifically to make output deterministic, though Dictionary order is not guaranteed
-        foreach (var kv in entries.OrderBy(k => k.Key))
+        // Ensure keys are unique case-insensitively before generating XML
+        var uniqueEntries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in entries)
+        {
+            if (!uniqueEntries.ContainsKey(kv.Key))
+            {
+                uniqueEntries[kv.Key] = kv.Value;
+            }
+        }
+
+        // Sort specifically to make output deterministic
+        foreach (var kv in uniqueEntries.OrderBy(k => k.Key))
         {
             // change " to &quot; for XML compatibility
             // change < to &lt; and > to &gt; for XML compatibility
@@ -714,7 +724,7 @@ public class TranslateEntry(
             
             var existing = await GetResxContentsAsync(resxFile, cancellationToken);
             
-            var deduped = new Dictionary<string, string>(StringComparer.Ordinal);
+            var deduped = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var toRemove = new List<string>();
             foreach (var kvp in existing)
             {
