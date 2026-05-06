@@ -66,6 +66,16 @@ dotlang generate-resx-annotations --path . --model "qwen3.5:27b-q8_0" --token $O
 
 Will help you generate `.resx` files for all the `.cshtml` files in the current folder.
 
+### Workflow Overview
+
+| Step | Command | Purpose |
+|------|---------|---------|
+| 1 | `auto-generate-view-injections` | Scans all Controllers for `[RenderInNavBar]` attributes and ViewModel strings, then injects them into the `ViewModelArgsInjector._useless_for_localizer()` placeholder method so that dotlang can subsequently detect these keys. |
+| 2 | `generate-resx-csharp` | Scans `.cs` files for `localizer["..."]` calls, translates them into all target languages using the Ollama model, and writes results to `Resources/Services/*.{locale}.resx`. |
+| 3 | `generate-resx-view` | Scans `.cshtml` files for `@Localizer["..."]` calls, translates them, and writes results to `Resources/Views/**/*.{locale}.resx`. |
+| 4 | `generate-resx-annotations` | Scans strings in `[Display]`, `[Required]`, and other DataAnnotation attributes, then translates and writes them to the appropriate resource files. |
+| 5 | `auto-dedup-resx-keys` | Removes duplicate keys from all `.resx` files. |
+
 ## Use as a simple translator
 
 This tool can also be used to simply translate a folder of files from one language to another.
