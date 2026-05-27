@@ -91,6 +91,11 @@ public class TranslateEntry(
             path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             logger.LogTrace("Starting localization for DataAnnotations in C# for language: {Lang}", lang);
             var modelsPath = Path.Combine(path, "Models");
+            if (!Directory.Exists(modelsPath))
+            {
+                logger.LogInformation("No Models directory found at {ModelsPath}, skipping DataAnnotations localization.", modelsPath);
+                continue;
+            }
             var csharpFiles = Directory.GetFileSystemEntries(modelsPath, "*.cs", SearchOption.AllDirectories);
             foreach (var csFile in csharpFiles)
             {
