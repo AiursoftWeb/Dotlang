@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <Version>10.0.43</Version>
+  <PropertyGroup><OutputType>Library</OutputType>
+    <Version>10.0.44</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Aiursoft.Dotlang.AspNetTranslate</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang.AspNetTranslate</RootNamespace>
@@ -19,8 +18,7 @@
     <PackageProjectUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</RepositoryUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
+    <PackageReadmeFile>README.md</PackageReadmeFile></PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="1.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
