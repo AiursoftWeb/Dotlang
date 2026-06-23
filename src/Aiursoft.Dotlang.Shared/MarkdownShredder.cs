@@ -30,6 +30,10 @@ public class MarkdownShredder
             return result;
         }
 
+        // Normalize line endings to \n so the regex lookahead (?=\n|$) works correctly
+        // with content that uses \r\n (CRLF) line endings.
+        content = content.Replace("\r\n", "\n");
+
         // 1. Split by code blocks
         // Using a regex that matches ```...``` or ~~~...~~~ including the backticks/tildes.
         // It handles the language identifier and content.
