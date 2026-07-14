@@ -9,6 +9,27 @@ namespace Aiursoft.Dotlang.Tests
     public class ResxRegressionTests
     {
         [TestMethod]
+        public void GenerateXml_EscapesLiteralFormatPlaceholdersInValuesOnly()
+        {
+            var entries = new Dictionary<string, string>
+            {
+                ["/api/{id}"] = "/api/{name}",
+                ["Composite format"] = "Value: {0}, price: {1:N2}",
+                ["Escaped literal"] = "Path: {{path}}"
+            };
+
+            var method = typeof(TranslateEntry).GetMethod("GenerateXml", BindingFlags.NonPublic | BindingFlags.Static);
+            if (method == null) Assert.Fail("Method GenerateXml not found");
+
+            var xml = (string)method.Invoke(null, new object[] { entries })!;
+
+            StringAssert.Contains(xml, "name=\"/api/{id}\"");
+            StringAssert.Contains(xml, "<value>/api/{{name}}</value>");
+            StringAssert.Contains(xml, "<value>Value: {0}, price: {1:N2}</value>");
+            StringAssert.Contains(xml, "<value>Path: {{path}}</value>");
+        }
+
+        [TestMethod]
         public async Task TestNoResxGeneratedForNoKeys()
         {
             // Arrange
