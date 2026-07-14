@@ -1,6 +1,7 @@
 ﻿using System.Security;
 using Microsoft.Extensions.Logging;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using Aiursoft.Canon;
 using Aiursoft.Dotlang.AspNetTranslate.Models;
@@ -401,14 +402,20 @@ public class TranslateEntry(
             // change & to &amp; for XML compatibility
             // to do that, use SecurityElement.Escape
             var safeKey = SecurityElement.Escape(kv.Key);
+            var safeValue = EscapeLiteralFormatPlaceholders(kv.Value);
             sb.AppendLine(
-                $"  <data name=\"{safeKey}\" xml:space=\"preserve\">\n    <value>{SecurityElement.Escape(kv.Value)}</value>\n  </data>");
+                $"  <data name=\"{safeKey}\" xml:space=\"preserve\">\n    <value>{SecurityElement.Escape(safeValue)}</value>\n  </data>");
         }
 
 
         var templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Template.xml");
         var template = File.ReadAllText(templatePath);
         return template.Replace("{{CONTENT}}", sb.ToString());
+    }
+
+    private static string EscapeLiteralFormatPlaceholders(string value)
+    {
+        return Regex.Replace(value, @"(?<!\{)\{(?=[A-Za-z_])[^{}]*\}(?!\})", match => $"{{{match.Value}}}");
     }
 
     public async Task StartWrapWithLocalizerAsync(string path, bool takeAction, CancellationToken cancellationToken = default)
@@ -652,7 +659,7 @@ public class TranslateEntry(
         
         // Find the _useless_for_localizer method using regex
         var methodPattern = @"private\s+void\s+_useless_for_localizer\s*\(\s*\)\s*\{[^}]*\}";
-        var methodMatch = System.Text.RegularExpressions.Regex.Match(originalContent, methodPattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+        var methodMatch = Regex.Match(originalContent, methodPattern, RegexOptions.Singleline);
         
         if (!methodMatch.Success)
         {
@@ -663,7 +670,7 @@ public class TranslateEntry(
         // Extract existing keys from the method
         var methodContent = methodMatch.Value;
         var existingKeyPattern = @"_\s*=\s*localizer\[""([^""]*)""\]";
-        var existingMatches = System.Text.RegularExpressions.Regex.Matches(methodContent, existingKeyPattern);
+        var existingMatches = Regex.Matches(methodContent, existingKeyPattern);
         var existingKeys = existingMatches.Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
         
         logger.LogInformation("Found {Count} existing keys in _useless_for_localizer", existingKeys.Count);
