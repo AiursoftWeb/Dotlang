@@ -659,7 +659,7 @@ public class TranslateEntry(
         
         // Find the _useless_for_localizer method using regex
         var methodPattern = @"private\s+void\s+_useless_for_localizer\s*\(\s*\)\s*\{[^}]*\}";
-        var methodMatch = System.Text.RegularExpressions.Regex.Match(originalContent, methodPattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+        var methodMatch = Regex.Match(originalContent, methodPattern, RegexOptions.Singleline);
         
         if (!methodMatch.Success)
         {
@@ -670,7 +670,7 @@ public class TranslateEntry(
         // Extract existing keys from the method
         var methodContent = methodMatch.Value;
         var existingKeyPattern = @"_\s*=\s*localizer\[""([^""]*)""\]";
-        var existingMatches = System.Text.RegularExpressions.Regex.Matches(methodContent, existingKeyPattern);
+        var existingMatches = Regex.Matches(methodContent, existingKeyPattern);
         var existingKeys = existingMatches.Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
         
         logger.LogInformation("Found {Count} existing keys in _useless_for_localizer", existingKeys.Count);
