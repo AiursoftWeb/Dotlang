@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>Library</OutputType>
-    <Version>10.0.39</Version>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <Version>10.0.40</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Aiursoft.Dotlang.Shared</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang.Shared</RootNamespace>
@@ -18,12 +19,13 @@
     <PackageProjectUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</RepositoryUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile></PropertyGroup>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Aiursoft.Canon" Version="10.0.11" />
     <PackageReference Include="Aiursoft.CommandFramework" Version="10.0.11" />
     <PackageReference Include="Aiursoft.GptClient" Version="10.0.19" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
   </ItemGroup>
 </Project>
