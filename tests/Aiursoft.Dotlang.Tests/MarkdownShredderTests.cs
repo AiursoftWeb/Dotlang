@@ -452,7 +452,7 @@ public class MarkdownShredderTests
         var codeChunk = result.FirstOrDefault(c =>
             c.Content.Contains("var x = 1"));
         Assert.IsNotNull(codeChunk, "Indented code block should still exist in output");
-        Assert.AreEqual(ChunkType.Static, codeChunk!.Type,
+        Assert.AreEqual(ChunkType.Static, codeChunk.Type,
             "Standalone indented code (no admonition header) must remain Static");
     }
 
