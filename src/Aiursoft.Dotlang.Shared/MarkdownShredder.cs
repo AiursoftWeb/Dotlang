@@ -1,5 +1,6 @@
 using System.Text;
-using System.Text.RegularExpressions;
+using Markdig;
+using Markdig.Syntax;
 
 namespace Aiursoft.Dotlang.Shared;
 
@@ -22,120 +23,194 @@ public class MarkdownChunk
 
 public class MarkdownShredder
 {
+    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+        .UsePipeTables()
+        .Build();
+
     public List<MarkdownChunk> Shred(string content, int maxLength = 1000)
     {
-        var result = new List<MarkdownChunk>();
         if (string.IsNullOrEmpty(content))
-        {
-            return result;
-        }
+            return [];
 
-        // Normalize line endings to \n so the regex lookahead (?=\n|$) works correctly
-        // with content that uses \r\n (CRLF) line endings.
+        // Normalize line endings to \n so all span calculations are consistent.
         content = content.Replace("\r\n", "\n");
 
-        // 1. Split by code blocks
-        // Using a regex that matches ```...``` or ~~~...~~~ including the backticks/tildes.
-        // It handles the language identifier and content.
-        var codeBlockRegex = new Regex(@"((?<=^|\n)[ \t]*(?:`{3,}|~{3,})[^\n]*\n.*?\n[ \t]*(?:`{3,}|~{3,})(?=\n|$))", RegexOptions.Singleline);
-        var parts = codeBlockRegex.Split(content);
-        var matches = codeBlockRegex.Matches(content);
+        var document = Markdown.Parse(content, Pipeline);
 
-        int matchIndex = 0;
-        for (int i = 0; i < parts.Length; i++)
+        var rawChunks = new List<RawChunk>();
+        var lastEnd = 0;
+
+        foreach (var block in document)
         {
-            var part = parts[i];
-            if (string.IsNullOrEmpty(part))
+            // Capture any gap between the previous block end and this block start.
+            var gap = block.Span.Start > lastEnd
+                ? content[lastEnd..block.Span.Start]
+                : null;
+
+            // ListBlock: iterate child items individually so each bullet is its own chunk.
+            if (block is ListBlock listBlock)
             {
-                // If it's a match, it shouldn't be empty (it has at least ``` ```)
-                // But Split might produce empty strings if code blocks are adjacent or at start/end.
-                if (i % 2 != 0) 
+                // Emit the leading gap as independent Static (list breaks merge chain).
+                if (gap != null)
                 {
-                    // This is a match part
-                    result.Add(new MarkdownChunk { Content = matches[matchIndex++].Value, Type = ChunkType.Static });
+                    rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
+                    lastEnd = block.Span.Start;
                 }
+
+                var hasItems = false;
+                foreach (var child in listBlock)
+                {
+                    if (child is ListItemBlock listItem)
+                    {
+                        hasItems = true;
+                        // Emit inter-item gaps (the \n between bullets) as Static.
+                        if (listItem.Span.Start > lastEnd)
+                        {
+                            rawChunks.Add(new RawChunk(ChunkType.Static,
+                                content[lastEnd..listItem.Span.Start], false));
+                        }
+
+                        var text = content[listItem.Span.Start..(listItem.Span.End + 1)];
+                        rawChunks.Add(new RawChunk(ChunkType.Translatable, text, false));
+                        lastEnd = listItem.Span.End + 1;
+                    }
+                }
+
+                // Defensive: skip an empty list block (shouldn't happen in
+                // practice, but ensures lastEnd advances so subsequent gaps
+                // aren't miscalculated).
+                if (!hasItems)
+                {
+                    lastEnd = block.Span.End + 1;
+                }
+
                 continue;
             }
 
-            if (i % 2 == 0)
+            // ── Gap routing ───────────────────────────────────────────────
+            // Whitespace between two Markdown blocks (e.g. the "\n\n" between
+            // two paragraphs) is NOT part of either block's Span. We route it
+            // to one of three destinations:
+            //
+            //   gap before current block:
+            //   ┌─ current is mergeable paragraph → ATTACH to current block
+            //   │    Example: Para1  \n\n  Para2
+            //   │    Para2 gets "\n\nPara2" → GreedyMerge combines with Para1
+            //   │
+            //   ├─ current is Static or non-mergeable AND gap exists
+            //   │    ┌─ previous chunk was mergeable → BACKTRACK to previous
+            //   │    │   Example: Para1  \n\n  ```code```
+            //   │    │   Para1 becomes "Para1\n\n" → stays contiguous
+            //   │    │
+            //   │    └─ previous was also non-mergeable → gap is ORPHAN
+            //   │        Example: # H1  \n\n  # H2
+            //   │        gap emitted as Static("\n\n")
+            //   │
+            //   └─ no gap or leading block → emit normally
+            // ───────────────────────────────────────────────────────────
+
+            var (chunkType, mergeable) = ClassifyBlock(block);
+
+            if (chunkType == ChunkType.Translatable && mergeable)
             {
-                // Non-code block part. Further shred it.
-                result.AddRange(ShredNonCodePart(part, maxLength));
+                // Mergeable paragraph: attach the preceding gap so it flows
+                // into the greedy-merge buffer instead of interrupting it.
+                rawChunks.Add(new RawChunk(chunkType,
+                    (gap ?? "") + content[block.Span.Start..(block.Span.End + 1)], true));
             }
-            else
+            else if (gap != null && rawChunks.Count > 0)
             {
-                // Code block part. Keep as is.
-                result.Add(new MarkdownChunk { Content = matches[matchIndex++].Value, Type = ChunkType.Static });
-            }
-        }
-
-        return result;
-    }
-
-    private List<MarkdownChunk> ShredNonCodePart(string content, int maxLength)
-    {
-        var result = new List<MarkdownChunk>();
-        
-        // Split by \n\n or \r\n\r\n
-        var paragraphSeparatorRegex = new Regex(@"(\n\s*\n|\r\n\s*\r\n)");
-        var parts = paragraphSeparatorRegex.Split(content);
-        var matches = paragraphSeparatorRegex.Matches(content);
-
-        // parts[0] = P1
-        // matches[0] = \n\n
-        // parts[1] = P2
-        // ...
-        
-        var currentTranslatable = new StringBuilder();
-        int matchIndex = 0;
-
-        for (int i = 0; i < parts.Length; i++)
-        {
-            var part = parts[i];
-            
-            if (i % 2 == 0)
-            {
-                // This is a paragraph
-                if (string.IsNullOrEmpty(part)) continue;
-
-                if (currentTranslatable.Length + part.Length > maxLength && currentTranslatable.Length > 0)
+                // Static / non-mergeable block: attempt to attach the gap to the
+                // *previous* mergeable chunk so it doesn't break the merge chain.
+                var last = rawChunks[^1];
+                if (last.Type == ChunkType.Translatable && last.Mergeable)
                 {
-                    // Current translatable is full enough, flush it.
-                    result.Add(new MarkdownChunk { Content = currentTranslatable.ToString(), Type = ChunkType.Translatable });
-                    currentTranslatable.Clear();
-                }
-
-                if (part.Length > maxLength)
-                {
-                    // Even a single paragraph is too long.
-                    // If we have something in currentTranslatable, it was already flushed above.
-                    result.Add(new MarkdownChunk { Content = part, Type = ChunkType.Translatable });
+                    rawChunks[^1] = last with { Content = last.Content + gap };
                 }
                 else
                 {
-                    currentTranslatable.Append(part);
+                    rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
                 }
+
+                rawChunks.Add(new RawChunk(chunkType,
+                    content[block.Span.Start..(block.Span.End + 1)], mergeable));
             }
             else
             {
-                // This is a separator
-                var separator = matches[matchIndex++].Value;
-                if (currentTranslatable.Length + separator.Length > maxLength && currentTranslatable.Length > 0)
+                // Leading block or no gap.
+                if (gap != null)
                 {
-                    // Flushing before adding separator if adding it would exceed maxLength.
-                    // This means the separator will be at the beginning of the next translatable chunk or become static.
-                    result.Add(new MarkdownChunk { Content = currentTranslatable.ToString(), Type = ChunkType.Translatable });
-                    currentTranslatable.Clear();
+                    rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
                 }
-                currentTranslatable.Append(separator);
+
+                rawChunks.Add(new RawChunk(chunkType,
+                    content[block.Span.Start..(block.Span.End + 1)], mergeable));
+            }
+
+            lastEnd = block.Span.End + 1;
+        }
+
+        // Emit any trailing whitespace after the last block.
+        if (lastEnd < content.Length)
+        {
+            rawChunks.Add(new RawChunk(ChunkType.Static, content[lastEnd..], false));
+        }
+
+        return GreedyMerge(rawChunks, maxLength);
+    }
+
+    private static (ChunkType Type, bool Mergeable) ClassifyBlock(Block block)
+    {
+        return block switch
+        {
+            FencedCodeBlock => (ChunkType.Static, false),
+            CodeBlock => (ChunkType.Static, false),
+            HtmlBlock => (ChunkType.Static, false),
+            ThematicBreakBlock => (ChunkType.Static, false),
+            HeadingBlock => (ChunkType.Translatable, false),
+            ParagraphBlock => (ChunkType.Translatable, true),
+            // QuoteBlock and any unlisted block type default to
+            // non-mergeable Translatable.
+            _ => (ChunkType.Translatable, false),
+        };
+    }
+
+    private static List<MarkdownChunk> GreedyMerge(List<RawChunk> chunks, int maxLength)
+    {
+        var result = new List<MarkdownChunk>();
+        var buffer = new StringBuilder();
+
+        foreach (var chunk in chunks)
+        {
+            if (chunk.Type == ChunkType.Static || !chunk.Mergeable)
+            {
+                FlushBuffer();
+                result.Add(new MarkdownChunk { Content = chunk.Content, Type = chunk.Type });
+                continue;
+            }
+
+            // Mergeable Translatable: add to buffer, flushing if it would exceed maxLength.
+            if (buffer.Length + chunk.Content.Length > maxLength && buffer.Length > 0)
+            {
+                FlushBuffer();
+            }
+
+            buffer.Append(chunk.Content);
+        }
+
+        FlushBuffer();
+        return result;
+
+        void FlushBuffer()
+        {
+            if (buffer.Length > 0)
+            {
+                result.Add(new MarkdownChunk { Content = buffer.ToString(), Type = ChunkType.Translatable });
+                buffer.Clear();
             }
         }
-
-        if (currentTranslatable.Length > 0)
-        {
-            result.Add(new MarkdownChunk { Content = currentTranslatable.ToString(), Type = ChunkType.Translatable });
-        }
-
-        return result;
     }
+
+    /// <summary>Internal chunk representation with mergeability flag.</summary>
+    private readonly record struct RawChunk(ChunkType Type, string Content, bool Mergeable);
 }
