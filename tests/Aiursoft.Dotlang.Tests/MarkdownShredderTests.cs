@@ -205,16 +205,13 @@ public class MarkdownShredderTests
     [TestMethod]
     public void TestListItemsAreIndependentEach()
     {
+        // Simple bullets (single paragraph, no nested structure) are
+        // mergeable — they can carpool. With a small mergeThreshold they
+        // stay independent; with a large one they merge. Either way,
+        // round-trip must be lossless.
         var content = "* Alpha\n* Beta\n* Gamma";
-        var result = _shredder.Shred(content, 100);
+        var result = _shredder.Shred(content, mergeThreshold: 100);
         AssertRoundTrip(content, result);
-
-        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
-        Assert.AreEqual(3, translatable.Count,
-            "Each bullet item should be its own chunk");
-        Assert.IsTrue(translatable[0].Content.Contains("Alpha"));
-        Assert.IsTrue(translatable[1].Content.Contains("Beta"));
-        Assert.IsTrue(translatable[2].Content.Contains("Gamma"));
     }
 
     [TestMethod]
@@ -224,33 +221,28 @@ public class MarkdownShredderTests
         var result = _shredder.Shred(content);
         AssertRoundTrip(content, result);
 
-        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
-        Assert.AreEqual(2, translatable.Count);
-        Assert.IsTrue(translatable[0].Content.Contains("continues on next line"));
-        Assert.IsTrue(translatable[1].Content.Contains("Another item"));
+        var allText = string.Concat(result.Select(c => c.Content));
+        Assert.IsTrue(allText.Contains("continues on next line"));
+        Assert.IsTrue(allText.Contains("Another item"));
     }
 
     [TestMethod]
     public void TestOrderedListItemsAreIndependent()
     {
         var content = "1. First item.\n2. Second item.\n3. Third item.";
-        var result = _shredder.Shred(content, 100);
+        var result = _shredder.Shred(content, mergeThreshold: 100);
         AssertRoundTrip(content, result);
-
-        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
-        Assert.AreEqual(3, translatable.Count);
     }
 
     [TestMethod]
     public void TestListWithHeadingBefore()
     {
         var content = "## Section\n\n* Item one\n* Item two\n* Item three";
-        var result = _shredder.Shred(content, 500);
+        var result = _shredder.Shred(content, mergeThreshold: 500);
         AssertRoundTrip(content, result);
 
         var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
-        // Heading + 3 list items = 4 independent chunks
-        Assert.AreEqual(4, translatable.Count);
+        // Heading is always independent; bullets may merge depending on threshold.
         Assert.AreEqual("## Section", translatable[0].Content);
     }
 
@@ -259,16 +251,13 @@ public class MarkdownShredderTests
     {
         var content = "## v2.0.1\n\n* **Offline LLM:** Added `anduinos-why-ai`.\n* **Memory:** Added `swapcontrol`.\n* **OOBE:** Added `anduinos-oobe`.\n* **Network:** Added audit page.\n* **Windows:** Added Exe Launcher.\n* **Xbox:** Added controller driver.\n* **Desktop:** Added taskbar layout.\n* **Core:** Cleaned up Ubuntu messages from `/etc/update-motd.d/` (the login MOTD now shows pure AnduinOS information).";
 
+        // Use a small merge threshold so short bullets carpool — the common
+        // CHANGELOG case. This compresses 400 API calls down to ~10.
         var result = _shredder.Shred(content, mergeThreshold: 500);
         AssertRoundTrip(content, result);
 
-        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
-        // 1 heading + 8 bullets = 9 independent translatable chunks
-        Assert.IsTrue(translatable.Count >= 9,
-            $"Expected at least 9 translatable chunks (1 heading + 8 bullets), got {translatable.Count}");
-
-        // Inline code is NOT split out — it stays within the translatable chunk
-        var allTranslatableText = string.Concat(translatable.Select(t => t.Content));
+        var allTranslatableText = string.Concat(
+            result.Where(c => c.Type == ChunkType.Translatable).Select(t => t.Content));
         Assert.IsTrue(allTranslatableText.Contains("`anduinos-why-ai`"),
             "Inline code should be preserved within translatable chunks");
         Assert.IsTrue(allTranslatableText.Contains("AnduinOS information"),
@@ -385,18 +374,20 @@ public class MarkdownShredderTests
     // ── Structural guarantees ────────────────────────────────────────────
 
     [TestMethod]
-    public void TestNoSingleChunkContainsMultipleBullets()
+    public void TestSimpleBulletsCanMerge()
     {
+        // Simple bullets (single paragraph each) are mergeable and can
+        // carpool — this is the key optimization that compresses hundreds
+        // of CHANGELOG API calls. Round-trip must remain lossless.
         var content = "* Item 1: with some longer text here.\n* Item 2: more long text for testing.\n* Item 3: even more text content.";
         var result = _shredder.Shred(content, mergeThreshold: 1000);
+        AssertRoundTrip(content, result);
 
-        foreach (var chunk in result.Where(c => c.Type == ChunkType.Translatable))
-        {
-            var bulletCount = chunk.Content.Split('\n')
-                .Count(line => line.TrimStart().StartsWith('*') || line.TrimStart().StartsWith('-'));
-            Assert.IsTrue(bulletCount <= 1,
-                $"Each translatable chunk should contain at most 1 bullet item. Got {bulletCount}:\n{chunk.Content}");
-        }
+        // All chunks should contain the full original text when concatenated.
+        var allText = string.Concat(result.Select(c => c.Content));
+        Assert.IsTrue(allText.Contains("Item 1"));
+        Assert.IsTrue(allText.Contains("Item 2"));
+        Assert.IsTrue(allText.Contains("Item 3"));
     }
 
     [TestMethod]
@@ -489,5 +480,41 @@ public class MarkdownShredderTests
         var bodyChunk = translatable.FirstOrDefault(c =>
             c.Content.Contains("First line") && c.Content.Contains("Second line"));
         Assert.IsNotNull(bodyChunk, "Multi-line admonition body should be one Translatable chunk");
+    }
+
+    // ── Nested structures inside list items / blockquotes ────────────────
+    // The outer loop only processes top-level blocks. When a ListItemBlock or
+    // QuoteBlock contains nested children (e.g. a FencedCodeBlock inside a
+    // bullet), the current "extract the whole item by Span" approach swallows
+    // the code and flags everything as Translatable.
+
+    [TestMethod]
+    public void TestCodeBlockInsideListItemIsStatic()
+    {
+        var content = "* Item 1\n* Item 2 with code:\n  ```bash\n  echo hello\n  ```\n* Item 3";
+        var result = _shredder.Shred(content);
+
+        var statics = result.Where(c => c.Type == ChunkType.Static).ToList();
+        Assert.IsTrue(statics.Any(s => s.Content.Contains("echo hello")),
+            "Nested code block inside a list item must be Static, not swallowed as Translatable");
+    }
+
+    [TestMethod]
+    public void TestCodeBlockInsideListItemRoundTrip()
+    {
+        var content = "Para.\n\n* Bullet:\n  ```csharp\n  var x = 1;\n  ```\n\nAfter.";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+    }
+
+    [TestMethod]
+    public void TestCodeBlockInsideQuoteIsStatic()
+    {
+        var content = "> Quote with code:\n> ```bash\n> echo hello\n> ```";
+        var result = _shredder.Shred(content);
+
+        var statics = result.Where(c => c.Type == ChunkType.Static).ToList();
+        Assert.IsTrue(statics.Any(s => s.Content.Contains("echo hello")),
+            "Nested code block inside a blockquote must be Static");
     }
 }

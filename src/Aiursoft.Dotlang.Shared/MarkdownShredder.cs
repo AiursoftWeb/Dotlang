@@ -32,7 +32,6 @@ public class MarkdownShredder
         if (string.IsNullOrEmpty(content))
             return [];
 
-        // Normalize line endings to \n so all span calculations are consistent.
         content = content.Replace("\r\n", "\n");
 
         var document = Markdown.Parse(content, Pipeline);
@@ -42,120 +41,7 @@ public class MarkdownShredder
 
         foreach (var block in document)
         {
-            // Capture any gap between the previous block end and this block start.
-            var gap = block.Span.Start > lastEnd
-                ? content[lastEnd..block.Span.Start]
-                : null;
-
-            // ListBlock: iterate child items individually so each bullet is its own chunk.
-            if (block is ListBlock listBlock)
-            {
-                // Emit the leading gap as independent Static (list breaks merge chain).
-                if (gap != null)
-                {
-                    rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
-                    lastEnd = block.Span.Start;
-                }
-
-                var hasItems = false;
-                foreach (var child in listBlock)
-                {
-                    if (child is ListItemBlock listItem)
-                    {
-                        hasItems = true;
-                        // Emit inter-item gaps (the \n between bullets) as Static.
-                        if (listItem.Span.Start > lastEnd)
-                        {
-                            rawChunks.Add(new RawChunk(ChunkType.Static,
-                                content[lastEnd..listItem.Span.Start], false));
-                        }
-
-                        var text = content[listItem.Span.Start..(listItem.Span.End + 1)];
-                        rawChunks.Add(new RawChunk(ChunkType.Translatable, text, false));
-                        lastEnd = listItem.Span.End + 1;
-                    }
-                }
-
-                // Defensive: skip an empty list block (shouldn't happen in
-                // practice, but ensures lastEnd advances so subsequent gaps
-                // aren't miscalculated).
-                if (!hasItems)
-                {
-                    lastEnd = block.Span.End + 1;
-                }
-
-                continue;
-            }
-
-            // ── Gap routing ───────────────────────────────────────────────
-            // Whitespace between two Markdown blocks (e.g. the "\n\n" between
-            // two paragraphs) is NOT part of either block's Span. We route it
-            // to one of three destinations:
-            //
-            //   gap before current block:
-            //   ┌─ current is mergeable paragraph → ATTACH to current block
-            //   │    Example: Para1  \n\n  Para2
-            //   │    Para2 gets "\n\nPara2" → GreedyMerge combines with Para1
-            //   │
-            //   ├─ current is Static or non-mergeable AND gap exists
-            //   │    ┌─ previous chunk was mergeable → BACKTRACK to previous
-            //   │    │   Example: Para1  \n\n  ```code```
-            //   │    │   Para1 becomes "Para1\n\n" → stays contiguous
-            //   │    │
-            //   │    └─ previous was also non-mergeable → gap is ORPHAN
-            //   │        Example: # H1  \n\n  # H2
-            //   │        gap emitted as Static("\n\n")
-            //   │
-            //   └─ no gap or leading block → emit normally
-            // ───────────────────────────────────────────────────────────
-
-            var (chunkType, mergeable) = ClassifyBlock(block);
-
-            // MkDocs admonition body override: indented text (CodeBlock) that
-            // immediately follows a !!! or ??? admonition header is NOT code —
-            // it is the admonition body and should be translated.
-            if (chunkType == ChunkType.Static && block is CodeBlock && IsAdmonitionBody(rawChunks))
-            {
-                chunkType = ChunkType.Translatable;
-            }
-
-            if (chunkType == ChunkType.Translatable && mergeable)
-            {
-                // Mergeable paragraph: attach the preceding gap so it flows
-                // into the greedy-merge buffer instead of interrupting it.
-                rawChunks.Add(new RawChunk(chunkType,
-                    (gap ?? "") + content[block.Span.Start..(block.Span.End + 1)], true));
-            }
-            else if (gap != null && rawChunks.Count > 0)
-            {
-                // Static / non-mergeable block: attempt to attach the gap to the
-                // *previous* mergeable chunk so it doesn't break the merge chain.
-                var last = rawChunks[^1];
-                if (last.Type == ChunkType.Translatable && last.Mergeable)
-                {
-                    rawChunks[^1] = last with { Content = last.Content + gap };
-                }
-                else
-                {
-                    rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
-                }
-
-                rawChunks.Add(new RawChunk(chunkType,
-                    content[block.Span.Start..(block.Span.End + 1)], mergeable));
-            }
-            else
-            {
-                // Leading block or no gap.
-                if (gap != null)
-                {
-                    rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
-                }
-
-                rawChunks.Add(new RawChunk(chunkType,
-                    content[block.Span.Start..(block.Span.End + 1)], mergeable));
-            }
-
-            lastEnd = block.Span.End + 1;
+            ProcessBlock(block, content, rawChunks, ref lastEnd);
         }
 
         // Emit any trailing whitespace after the last block.
@@ -165,6 +51,90 @@ public class MarkdownShredder
         }
 
         return GreedyMerge(rawChunks, mergeThreshold);
+    }
+
+    /// <summary>
+    /// Unified recursive block processor. For simple list items (a single
+    /// paragraph — the common CHANGELOG case) we skip recursion and treat
+    /// them as mergeable paragraphs so they can carpool into fewer chunks.
+    /// Complex containers (nested lists, quotes, items with code blocks)
+    /// are recursed into so nested structures are correctly classified.
+    /// </summary>
+    private static void ProcessBlock(Block block, string content, List<RawChunk> rawChunks, ref int lastEnd)
+    {
+        // ── Container routing ──────────────────────────────────────────
+        // Simple list item = one child that is a paragraph. Treat it as a
+        // flat mergeable block — it does NOT need recursive dissection.
+        bool isSimpleListItem = block is ListItemBlock li && li.Count == 1 && li[0] is ParagraphBlock;
+
+        bool shouldRecurse = block is ContainerBlock && !isSimpleListItem &&
+                             (block is ListBlock || block is ListItemBlock || block is QuoteBlock);
+
+        if (shouldRecurse)
+        {
+            var container = (ContainerBlock)block;
+            var cGap = block.Span.Start > lastEnd ? content[lastEnd..block.Span.Start] : null;
+
+            if (cGap != null)
+            {
+                // Try to attach the gap to the previous mergeable chunk so
+                // it doesn't interrupt the merge chain.
+                if (rawChunks.Count > 0 && rawChunks[^1].Type == ChunkType.Translatable && rawChunks[^1].Mergeable)
+                {
+                    var last = rawChunks[^1];
+                    rawChunks[^1] = last with { Content = last.Content + cGap };
+                }
+                else
+                {
+                    rawChunks.Add(new RawChunk(ChunkType.Static, cGap, false));
+                }
+                lastEnd = block.Span.Start;
+            }
+
+            foreach (var child in container)
+            {
+                ProcessBlock(child, content, rawChunks, ref lastEnd);
+            }
+
+            return;
+        }
+
+        // ── Leaf / simple-item routing ────────────────────────────────
+        var (chunkType, mergeable) = ClassifyBlock(block);
+
+        // MkDocs admonition body override.
+        if (chunkType == ChunkType.Static && block is CodeBlock && IsAdmonitionBody(rawChunks))
+            chunkType = ChunkType.Translatable;
+
+        var gap = block.Span.Start > lastEnd ? content[lastEnd..block.Span.Start] : null;
+        var text = content[block.Span.Start..(block.Span.End + 1)];
+
+        if (chunkType == ChunkType.Translatable && mergeable)
+        {
+            // Mergeable: attach the preceding gap so it flows into the
+            // greedy-merge buffer. For simple list items this is where the
+            // "* " bullet marker (living in the gap) joins the text.
+            rawChunks.Add(new RawChunk(chunkType, (gap ?? "") + text, true));
+        }
+        else if (gap != null && rawChunks.Count > 0)
+        {
+            var last = rawChunks[^1];
+            if (last.Type == ChunkType.Translatable && last.Mergeable)
+                rawChunks[^1] = last with { Content = last.Content + gap };
+            else
+                rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
+
+            rawChunks.Add(new RawChunk(chunkType, text, mergeable));
+        }
+        else
+        {
+            if (gap != null)
+                rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
+
+            rawChunks.Add(new RawChunk(chunkType, text, mergeable));
+        }
+
+        lastEnd = block.Span.End + 1;
     }
 
     /// <summary>
@@ -193,8 +163,10 @@ public class MarkdownShredder
             ThematicBreakBlock => (ChunkType.Static, false),
             HeadingBlock => (ChunkType.Translatable, false),
             ParagraphBlock => (ChunkType.Translatable, true),
-            // QuoteBlock and any unlisted block type default to
-            // non-mergeable Translatable.
+            // Simple list items (single paragraph, the common CHANGELOG case)
+            // are mergeable so they can carpool — this is what compresses
+            // 400 API calls down to ~10.
+            ListItemBlock => (ChunkType.Translatable, true),
             _ => (ChunkType.Translatable, false),
         };
     }
