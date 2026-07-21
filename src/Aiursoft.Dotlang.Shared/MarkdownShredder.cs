@@ -27,7 +27,7 @@ public class MarkdownShredder
         .UsePipeTables()
         .Build();
 
-    public List<MarkdownChunk> Shred(string content, int maxLength = 1000)
+    public List<MarkdownChunk> Shred(string content, int mergeThreshold = 1000)
     {
         if (string.IsNullOrEmpty(content))
             return [];
@@ -164,7 +164,7 @@ public class MarkdownShredder
             rawChunks.Add(new RawChunk(ChunkType.Static, content[lastEnd..], false));
         }
 
-        return GreedyMerge(rawChunks, maxLength);
+        return GreedyMerge(rawChunks, mergeThreshold);
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ public class MarkdownShredder
         };
     }
 
-    private static List<MarkdownChunk> GreedyMerge(List<RawChunk> chunks, int maxLength)
+    private static List<MarkdownChunk> GreedyMerge(List<RawChunk> chunks, int mergeThreshold)
     {
         var result = new List<MarkdownChunk>();
         var buffer = new StringBuilder();
@@ -213,8 +213,8 @@ public class MarkdownShredder
                 continue;
             }
 
-            // Mergeable Translatable: add to buffer, flushing if it would exceed maxLength.
-            if (buffer.Length + chunk.Content.Length > maxLength && buffer.Length > 0)
+            // Mergeable Translatable: add to buffer, flushing if it would exceed mergeThreshold.
+            if (buffer.Length + chunk.Content.Length > mergeThreshold && buffer.Length > 0)
             {
                 FlushBuffer();
             }

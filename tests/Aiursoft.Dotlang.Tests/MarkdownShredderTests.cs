@@ -143,7 +143,7 @@ public class MarkdownShredderTests
     [TestMethod]
     public void TestGreedyShred()
     {
-        // P1 (2) + \n\nP2 (4) = 6 chars — fits in maxLength 9.
+        // P1 (2) + \n\nP2 (4) = 6 chars — fits in mergeThreshold 9.
         // \n\nP3 (4) would push it to 10 — triggers flush.
         // Gaps attach to the *following* mergeable block, so:
         //   chunk 1 = P1 + \n\nP2             = "P1\n\nP2"       (6 chars)
@@ -259,7 +259,7 @@ public class MarkdownShredderTests
     {
         var content = "## v2.0.1\n\n* **Offline LLM:** Added `anduinos-why-ai`.\n* **Memory:** Added `swapcontrol`.\n* **OOBE:** Added `anduinos-oobe`.\n* **Network:** Added audit page.\n* **Windows:** Added Exe Launcher.\n* **Xbox:** Added controller driver.\n* **Desktop:** Added taskbar layout.\n* **Core:** Cleaned up Ubuntu messages from `/etc/update-motd.d/` (the login MOTD now shows pure AnduinOS information).";
 
-        var result = _shredder.Shred(content, maxLength: 500);
+        var result = _shredder.Shred(content, mergeThreshold: 500);
         AssertRoundTrip(content, result);
 
         var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
@@ -388,7 +388,7 @@ public class MarkdownShredderTests
     public void TestNoSingleChunkContainsMultipleBullets()
     {
         var content = "* Item 1: with some longer text here.\n* Item 2: more long text for testing.\n* Item 3: even more text content.";
-        var result = _shredder.Shred(content, maxLength: 1000);
+        var result = _shredder.Shred(content, mergeThreshold: 1000);
 
         foreach (var chunk in result.Where(c => c.Type == ChunkType.Translatable))
         {
@@ -402,20 +402,20 @@ public class MarkdownShredderTests
     [TestMethod]
     public void TestMaxChunkSizeRespected()
     {
-        // GreedyMerge groups mergeable paragraphs up to maxLength, but it
+        // GreedyMerge groups mergeable paragraphs up to mergeThreshold, but it
         // never splits a single block. If any individual block exceeds
-        // maxLength, it is emitted as-is.
+        // mergeThreshold, it is emitted as-is.
         //
         // This test uses all-short paragraphs so every chunk stays within
-        // maxLength (no single-paragraph overshoot).
+        // mergeThreshold (no single-paragraph overshoot).
         var content = "P1\n\nP2\n\nP3\n\nP4\n\nP5\n\nP6";
-        var maxLength = 10;
-        var result = _shredder.Shred(content, maxLength);
+        var mergeThreshold = 10;
+        var result = _shredder.Shred(content, mergeThreshold);
 
         foreach (var chunk in result.Where(c => c.Type == ChunkType.Translatable))
         {
-            Assert.IsTrue(chunk.Content.Length <= maxLength,
-                $"Translatable chunk exceeds maxLength. Length={chunk.Content.Length}, maxLength={maxLength}");
+            Assert.IsTrue(chunk.Content.Length <= mergeThreshold,
+                $"Translatable chunk exceeds mergeThreshold. Length={chunk.Content.Length}, mergeThreshold={mergeThreshold}");
         }
     }
 
