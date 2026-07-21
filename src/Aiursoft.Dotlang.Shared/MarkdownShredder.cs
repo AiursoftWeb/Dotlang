@@ -111,6 +111,14 @@ public class MarkdownShredder
 
             var (chunkType, mergeable) = ClassifyBlock(block);
 
+            // MkDocs admonition body override: indented text (CodeBlock) that
+            // immediately follows a !!! or ??? admonition header is NOT code —
+            // it is the admonition body and should be translated.
+            if (chunkType == ChunkType.Static && block is CodeBlock && IsAdmonitionBody(rawChunks))
+            {
+                chunkType = ChunkType.Translatable;
+            }
+
             if (chunkType == ChunkType.Translatable && mergeable)
             {
                 // Mergeable paragraph: attach the preceding gap so it flows
@@ -157,6 +165,22 @@ public class MarkdownShredder
         }
 
         return GreedyMerge(rawChunks, maxLength);
+    }
+
+    /// <summary>
+    /// Checks whether the current block is the indented body of a MkDocs admonition
+    /// (!!! or ???). If the most recent Translatable chunk starts with <c>!!!</c> or
+    /// <c>???</c>, the current CodeBlock is admonition body, not source code.
+    /// </summary>
+    private static bool IsAdmonitionBody(List<RawChunk> chunks)
+    {
+        for (var i = chunks.Count - 1; i >= 0; i--)
+        {
+            if (chunks[i].Type == ChunkType.Static) continue;
+            var text = chunks[i].Content.TrimEnd();
+            return text.StartsWith("!!!") || text.StartsWith("???");
+        }
+        return false;
     }
 
     private static (ChunkType Type, bool Mergeable) ClassifyBlock(Block block)

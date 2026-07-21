@@ -418,4 +418,76 @@ public class MarkdownShredderTests
                 $"Translatable chunk exceeds maxLength. Length={chunk.Content.Length}, maxLength={maxLength}");
         }
     }
+
+    // ── MkDocs admonitions ───────────────────────────────────────────────
+    // When 4-space indented text follows a !!! or ??? admonition header,
+    // Markdig classifies it as CodeBlock. We must re-classify it as
+    // Translatable because it is NOT code — it is the admonition body.
+
+    [TestMethod]
+    public void TestAdmonitionBodyIsTranslatable()
+    {
+        // When a blank line separates the admonition header from its indented
+        // body, Markdig splits them into two blocks. The indented body is
+        // classified as CodeBlock — but it is NOT code, it is translatable
+        // admonition body text.
+        var content = "!!! note \"Title\"\n\n    This is the admonition body.";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
+        var bodyChunk = translatable.FirstOrDefault(c => c.Content.Contains("admonition body"));
+        Assert.IsNotNull(bodyChunk,
+            "Admonition body text after blank line should be in a Translatable chunk, not Static");
+    }
+
+    [TestMethod]
+    public void TestAdmonitionBodyRoundTrip()
+    {
+        var content = "!!! warning \"Compat\"\n\n    Due to fragmentation.\n    Second line.";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+    }
+
+    [TestMethod]
+    public void TestStandaloneIndentedCodeStillStatic()
+    {
+        // Indented code that is NOT preceded by an admonition header
+        // must remain Static (regression test).
+        var content = "Normal para.\n\n    var x = 1;\n    var y = 2;";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        var codeChunk = result.FirstOrDefault(c =>
+            c.Content.Contains("var x = 1"));
+        Assert.IsNotNull(codeChunk, "Indented code block should still exist in output");
+        Assert.AreEqual(ChunkType.Static, codeChunk!.Type,
+            "Standalone indented code (no admonition header) must remain Static");
+    }
+
+    [TestMethod]
+    public void TestCollapsibleAdmonitionBodyIsTranslatable()
+    {
+        var content = "??? note \"Collapsible\"\n\n    Hidden body text.";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
+        var bodyChunk = translatable.FirstOrDefault(c => c.Content.Contains("Hidden body"));
+        Assert.IsNotNull(bodyChunk,
+            "Collapsible admonition (???) body should also be Translatable");
+    }
+
+    [TestMethod]
+    public void TestAdmonitionWithMultipleBodyLines()
+    {
+        var content = "!!! tip\n\n    First line.\n    Second line.\n    Third line.";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
+        var bodyChunk = translatable.FirstOrDefault(c =>
+            c.Content.Contains("First line") && c.Content.Contains("Second line"));
+        Assert.IsNotNull(bodyChunk, "Multi-line admonition body should be one Translatable chunk");
+    }
 }
