@@ -42,7 +42,7 @@ public class OllamaBasedTranslatorEngine(
 
         4. Human names, nicknames, proper nouns, symbols, and trademarks must be output as-is — do not translate them.
 
-        5. If you don't understand something or aren't sure whether to translate it, output it as-is without translating.
+        5. **Translate every sentence.** Even when a paragraph mixes proper nouns with natural language, translate the natural language parts. Only skip a sentence ENTIRELY if it contains nothing but proper nouns, code, paths, or commands — with zero natural language text.
 
         Please translate the content into the target language {LANG}. Do **NOT** output any other sentences or content. Only output the translated content and wrap it in three backticks (```), like this:
 
@@ -70,7 +70,7 @@ public class OllamaBasedTranslatorEngine(
         - If `{WORD}` is inline code (wrapped in backticks), a package name, a file path, a URL, a version number, a CLI command, a brand name, a protocol/technology name, or a proper noun — output it exactly as-is, do NOT translate.
         - Preserve any Markdown formatting markers around `{WORD}`.
         - Human names, Nicknames, Proper nouns, symbols, trademarks, etc. must be output as it is and do not translate them! So please consider if the sentence or word `{WORD}` is one of them.
-        - If you don't understand what you want to translate, please output it as it is!
+        - If you are absolutely certain the text contains nothing translatable (pure code, paths, commands, proper nouns only), output it as-is. Otherwise, translate the natural language parts.
 
         Do **NOT** output any other content. Only output the translated content and wrap it in three backticks (```), like this:
 
