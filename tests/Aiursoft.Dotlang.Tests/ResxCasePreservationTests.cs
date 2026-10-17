@@ -2,7 +2,6 @@ using Aiursoft.Dotlang.AspNetTranslate.Services;
 using Aiursoft.Canon;
 using Aiursoft.Dotlang.Shared;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using System.Reflection;
 
 namespace Aiursoft.Dotlang.Tests
@@ -30,9 +29,7 @@ public class CaseTest {
     }
 }");
 
-            var mockEngine = new Mock<CachedTranslateEngine>(null!, null!, null!);
-            mockEngine.Setup(x => x.TranslateWordInParagraphAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string _, string w, string _, CancellationToken _) => w);
+            var engine = new IdentityTranslateEngine();
 
             var entry = new TranslateEntry(
                 new DataAnnotationKeyExtractor(),
@@ -40,7 +37,7 @@ public class CaseTest {
                 new ViewMetadataExtractor(),
                 new CanonPool(new NullLogger<CanonPool>()),
                 new CshtmlLocalizer(),
-                mockEngine.Object,
+                engine,
                 new NullLogger<TranslateEntry>()
             );
 
@@ -65,6 +62,12 @@ public class CaseTest {
             Assert.AreEqual(0, goToLowerCount, "Key 'go to' should not appear as a separate key since it is case-insensitively duplicate of 'Go To'");
 
             Directory.Delete(tempDir, true);
+        }
+        private sealed class IdentityTranslateEngine() : CachedTranslateEngine(null!, null!, null!)
+        {
+            public override Task<string> TranslateWordInParagraphAsync(
+                string sourceContent, string word, string language,
+                CancellationToken cancellationToken = default) => Task.FromResult(word);
         }
     }
 }
