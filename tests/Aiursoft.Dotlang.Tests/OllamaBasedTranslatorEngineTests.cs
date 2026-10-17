@@ -1,11 +1,11 @@
 using Aiursoft.Dotlang.Shared;
-using Moq;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Aiursoft.Canon;
 using Aiursoft.GptClient.Services;
-using Aiursoft.GptClient.Abstractions;
 using System.Text;
+using System.Runtime.CompilerServices;
+using Aiursoft.GptClient.Abstractions;
 
 namespace Aiursoft.Dotlang.Tests;
 
@@ -17,25 +17,24 @@ public class OllamaBasedTranslatorEngineTests
     [TestInitialize]
     public void Setup()
     {
-        var optionsMock = new Mock<IOptions<TranslateOptions>>();
-        optionsMock.Setup(o => o.Value).Returns(new TranslateOptions
+        var options = Options.Create(new TranslateOptions
         {
             OllamaInstance = "http://localhost",
             OllamaModel = "test",
             OllamaToken = "test"
         });
-        var retryEngine = new RetryEngine(new Mock<ILogger<RetryEngine>>().Object);
-        var loggerMock = new Mock<ILogger<OllamaBasedTranslatorEngine>>();
+        var retryEngine = new RetryEngine(NullLogger<RetryEngine>.Instance);
+        var logger = NullLogger<OllamaBasedTranslatorEngine>.Instance;
         
-        var chatClientLoggerMock = new Mock<ILogger<ChatClient>>();
-        var chatClientMock = new Mock<ChatClient>(new HttpClient(), chatClientLoggerMock.Object);
+        using var httpClient = new HttpClient();
+        var chatClient = new ChatClient(httpClient, NullLogger<ChatClient>.Instance);
         var shredder = new MarkdownShredder();
 
         _engine = new OllamaBasedTranslatorEngine(
-            optionsMock.Object,
+            options,
             retryEngine,
-            loggerMock.Object,
-            chatClientMock.Object,
+            logger,
+            chatClient,
             shredder);
     }
 
@@ -85,41 +84,24 @@ public class OllamaBasedTranslatorEngineTests
     [TestMethod]
     public async Task TestTranslateStreamAsync()
     {
-        var optionsMock = new Mock<IOptions<TranslateOptions>>();
-        optionsMock.Setup(o => o.Value).Returns(new TranslateOptions
+        var options = Options.Create(new TranslateOptions
         {
             OllamaInstance = "http://localhost",
             OllamaModel = "test",
             OllamaToken = "test"
         });
-        var retryEngine = new RetryEngine(new Mock<ILogger<RetryEngine>>().Object);
-        var loggerMock = new Mock<ILogger<OllamaBasedTranslatorEngine>>();
+        var retryEngine = new RetryEngine(NullLogger<RetryEngine>.Instance);
+        var logger = NullLogger<OllamaBasedTranslatorEngine>.Instance;
         
-        var chatClientLoggerMock = new Mock<ILogger<ChatClient>>();
-        var chatClientMock = new Mock<ChatClient>(new HttpClient(), chatClientLoggerMock.Object);
+        using var httpClient = new HttpClient();
+        var chatClient = new StreamingChatClient(httpClient);
         
-        // Mock streaming response
-        async IAsyncEnumerable<string> MockStream()
-        {
-            yield return "Here is ";
-            yield return "the translation:\n";
-            yield return "```markdown\n";
-            yield return "Hello ";
-            yield return "world\n";
-            yield return "```";
-            await Task.Yield();
-        }
-
-        chatClientMock
-            .Setup(c => c.AskModelStream(It.IsAny<OpenAiRequestModel>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(MockStream());
-
         var shredder = new MarkdownShredder();
         var engine = new OllamaBasedTranslatorEngine(
-            optionsMock.Object,
+            options,
             retryEngine,
-            loggerMock.Object,
-            chatClientMock.Object,
+            logger,
+            chatClient,
             shredder);
 
         var result = new StringBuilder();
@@ -131,5 +113,21 @@ public class OllamaBasedTranslatorEngineTests
         // Should strip "Here is the translation:", "```markdown", and "```"
         // Also leading/trailing whitespace around the content.
         Assert.AreEqual("Hello world", result.ToString().Trim());
+    }
+    private sealed class StreamingChatClient(HttpClient httpClient)
+        : ChatClient(httpClient, NullLogger<ChatClient>.Instance)
+    {
+        public override async IAsyncEnumerable<string> AskModelStream(
+            OpenAiRequestModel model, string completionApiUrl, string? token,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            yield return "Here is ";
+            yield return "the translation:\n";
+            yield return "```markdown\n";
+            yield return "Hello ";
+            yield return "world\n";
+            yield return "```";
+            await Task.Yield();
+        }
     }
 }
