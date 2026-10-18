@@ -2,6 +2,8 @@ using Aiursoft.Canon;
 using Aiursoft.Dotlang.AspNetTranslate.Services;
 using Aiursoft.Dotlang.Shared;
 using Aiursoft.GptClient.Services;
+using Aiursoft.GptClient.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -78,46 +80,55 @@ public class FolderTranslateTests
     [TestMethod]
     public async Task TestDoNotSkipExistingFiles()
     {
-         // Arrange
         var sourceFile = Path.Combine(_sourceDir, "test.html");
-        // Destination does not exist, so it should try to translate
-        
+        var destFile = Path.Combine(_destDir, "test.html");
         await File.WriteAllTextAsync(sourceFile, "Source Content");
+        await File.WriteAllTextAsync(destFile, "Existing Destination Content");
 
+        using var httpClient = new HttpClient();
+        var chatClient = new CanceledChatClient(httpClient);
         var services = new ServiceCollection();
-        services.AddLogging(l => l.AddConsole());
+        services.AddLogging();
         services.AddTransient<FolderFilesTranslateEngine>();
         services.AddTransient<OllamaBasedTranslatorEngine>();
         services.AddTransient<MarkdownShredder>();
-        services.AddTransient<ChatClient>();
+        services.AddSingleton<ChatClient>(chatClient);
         services.AddTransient<RetryEngine>();
-        services.AddHttpClient();
-        services.Configure<TranslateOptions>(o =>
+        services.Configure<TranslateOptions>(options =>
         {
-            o.OllamaInstance = "http://invalid-url-that-does-not-exist:12345"; 
-            o.OllamaModel = "llama3";
-            o.OllamaToken = "token";
+            options.OllamaInstance = "http://localhost";
+            options.OllamaModel = "test";
+            options.OllamaToken = "test-token";
         });
 
-        var sp = services.BuildServiceProvider();
-        var engine = sp.GetRequiredService<FolderFilesTranslateEngine>();
+        using var provider = services.BuildServiceProvider();
+        var engine = provider.GetRequiredService<FolderFilesTranslateEngine>();
 
-        // Act
-        // This SHOULD throw exception because it tries to connect to invalid URL
-        try
-        {
-            await engine.TranslateAsync(
+        var exception = await Assert.ThrowsExactlyAsync<TaskCanceledException>(() =>
+            engine.TranslateAsync(
                 sourceFolder: _sourceDir,
                 destinationFolder: _destDir,
                 language: "zh_CN",
                 recursive: false,
                 extensions: ["html"],
-                skipExistingFiles: false);
-            Assert.Fail("Should have thrown exception");
-        }
-        catch (Exception)
+                skipExistingFiles: false));
+
+        Assert.AreSame(chatClient.Failure, exception);
+        Assert.AreEqual(1, chatClient.RequestCount);
+        Assert.AreEqual("Existing Destination Content", await File.ReadAllTextAsync(destFile));
+    }
+
+    private sealed class CanceledChatClient(HttpClient httpClient)
+        : ChatClient(httpClient, NullLogger<ChatClient>.Instance)
+    {
+        public TaskCanceledException Failure { get; } = new("Translation request canceled.");
+        public int RequestCount { get; private set; }
+
+        public override Task<CompletionData> AskModel(OpenAiRequestModel model,
+            string completionApiUrl, string? token, CancellationToken cancellationToken)
         {
-            // Expected
+            RequestCount++;
+            return Task.FromException<CompletionData>(Failure);
         }
     }
 }
