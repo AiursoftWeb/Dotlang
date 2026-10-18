@@ -1,6 +1,6 @@
 # ASP.NET Core App Translator
 
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/blob/master/LICENSE)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/AiursoftWeb/dotlang/blob/master/LICENSE)
 [![Pipeline stat](https://gitlab.aiursoft.com/aiursoft/dotlang/badges/master/pipeline.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/pipelines)
 [![Test Coverage](https://gitlab.aiursoft.com/aiursoft/dotlang/badges/master/coverage.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/pipelines)
 [![NuGet version (Aiursoft.DotLang)](https://img.shields.io/nuget/v/Aiursoft.Dotlang.svg)](https://www.nuget.org/packages/Aiursoft.Dotlang/)
