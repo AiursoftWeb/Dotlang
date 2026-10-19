@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Version>10.0.59</Version>
+    <Version>10.0.60</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Aiursoft.Dotlang.Shared</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang.Shared</RootNamespace>
@@ -24,7 +24,7 @@
   <ItemGroup>
     <PackageReference Include="Aiursoft.Canon" Version="10.0.17" />
     <PackageReference Include="Aiursoft.CommandFramework" Version="10.0.17" />
-    <PackageReference Include="Aiursoft.GptClient" Version="10.0.26" />
+    <PackageReference Include="Aiursoft.GptClient" Version="10.0.27" />
     <PackageReference Include="Markdig" Version="1.4.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
     <None Include="../../README.md" Pack="true" PackagePath="." />
