@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Version>10.0.81</Version>
+    <Version>10.0.82</Version>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>dotlang</AssemblyName>
     <RootNamespace>Aiursoft.Dotlang</RootNamespace>
@@ -23,9 +23,9 @@
     <PackageId>Aiursoft.Dotlang</PackageId>
     <PackageTags>cli dotnet translate</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/AiursoftWeb/dotlang</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://gitlab.aiursoft.com/Aiursoft/Dotlang</RepositoryUrl>
+    <RepositoryUrl>https://github.com/AiursoftWeb/dotlang</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
