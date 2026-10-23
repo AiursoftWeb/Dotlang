@@ -103,7 +103,9 @@ public class MarkdownShredder
         var (chunkType, mergeable) = ClassifyBlock(block);
 
         // MkDocs admonition body override.
-        if (chunkType == ChunkType.Static && block is CodeBlock && IsAdmonitionBody(rawChunks))
+        var isAdmonitionBody = chunkType == ChunkType.Static &&
+                               block is CodeBlock and not FencedCodeBlock && IsAdmonitionBody(rawChunks);
+        if (isAdmonitionBody)
             chunkType = ChunkType.Translatable;
 
         var gap = block.Span.Start > lastEnd ? content[lastEnd..block.Span.Start] : null;
@@ -124,17 +126,60 @@ public class MarkdownShredder
             else
                 rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
 
-            rawChunks.Add(new RawChunk(chunkType, text, mergeable));
+            AddLeaf();
         }
         else
         {
             if (gap != null)
                 rawChunks.Add(new RawChunk(ChunkType.Static, gap, false));
 
-            rawChunks.Add(new RawChunk(chunkType, text, mergeable));
+            AddLeaf();
         }
 
         lastEnd = block.Span.End + 1;
+
+        void AddLeaf()
+        {
+            if (isAdmonitionBody)
+                AddAdmonitionBody(text, rawChunks);
+            else
+                rawChunks.Add(new RawChunk(chunkType, text, mergeable));
+        }
+    }
+
+    private static void AddAdmonitionBody(string text, List<RawChunk> chunks)
+    {
+        // Parse the body at its own indentation level so fenced/indented examples
+        // stay static. Map the resulting chunks back to the untouched source.
+        var body = new StringBuilder();
+        var sourceOffsets = new List<int>();
+        for (var i = 0; i < text.Length;)
+        {
+            var lineStart = i;
+            var columns = 0;
+            while (i < text.Length && columns < 4 && text[i] is ' ' or '\t')
+            {
+                columns = text[i++] == '\t' ? 4 : columns + 1;
+            }
+            if (i == text.Length) break;
+
+            sourceOffsets.Add(lineStart);
+            body.Append(text[i++]);
+            while (i < text.Length && text[i - 1] != '\n')
+            {
+                sourceOffsets.Add(i);
+                body.Append(text[i++]);
+            }
+        }
+        sourceOffsets.Add(text.Length);
+
+        var offset = 0;
+        foreach (var chunk in new MarkdownShredder().Shred(body.ToString()))
+        {
+            var start = sourceOffsets[offset];
+            offset += chunk.Content.Length;
+            chunks.Add(new RawChunk(chunk.Type, text[start..sourceOffsets[offset]], false));
+        }
     }
 
     /// <summary>
@@ -146,8 +191,11 @@ public class MarkdownShredder
     {
         for (var i = chunks.Count - 1; i >= 0; i--)
         {
-            if (chunks[i].Type == ChunkType.Static) continue;
-            var text = chunks[i].Content.TrimEnd();
+            // Gaps may be attached to a header or emitted as separate static chunks.
+            // Real static content ends the admonition context, so do not skip code.
+            var text = chunks[i].Content.Trim();
+            if (text.Length == 0) continue;
+            if (chunks[i].Type == ChunkType.Static) return false;
             return text.StartsWith("!!!") || text.StartsWith("???");
         }
         return false;
