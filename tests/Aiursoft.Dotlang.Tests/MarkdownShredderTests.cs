@@ -416,20 +416,71 @@ public class MarkdownShredderTests
     // Translatable because it is NOT code — it is the admonition body.
 
     [TestMethod]
-    public void TestAdmonitionBodyIsTranslatable()
+    [DataRow("", "!!! note")]
+    [DataRow("Intro paragraph.\n\n", "!!! note")]
+    [DataRow("```csharp\nvar x = 1;\n```\n\n", "!!! warning")]
+    [DataRow("# Heading\n\n", "??? note")]
+    [DataRow("Intro paragraph.\n\n", "???+ tip")]
+    public void TestAdmonitionBodyIsTranslatable(string prefix, string marker)
     {
-        // When a blank line separates the admonition header from its indented
-        // body, Markdig splits them into two blocks. The indented body is
-        // classified as CodeBlock — but it is NOT code, it is translatable
-        // admonition body text.
-        var content = "!!! note \"Title\"\n\n    This is the admonition body.";
+        var content = prefix + marker + " \"Title\"\n\n    This is the admonition body.";
         var result = _shredder.Shred(content);
         AssertRoundTrip(content, result);
 
-        var translatable = result.Where(c => c.Type == ChunkType.Translatable).ToList();
-        var bodyChunk = translatable.FirstOrDefault(c => c.Content.Contains("admonition body"));
-        Assert.IsNotNull(bodyChunk,
-            "Admonition body text after blank line should be in a Translatable chunk, not Static");
+        var bodyChunk = result.Single(c => c.Content.Contains("admonition body"));
+        Assert.AreEqual(ChunkType.Translatable, bodyChunk.Type,
+            "Admonition prose must be translated even when other content precedes its header");
+    }
+
+    [TestMethod]
+    public void TestConsecutiveAdmonitionsTranslateEveryParagraph()
+    {
+        var content = "Introduction.\n\n!!! note \"First\"\n\n    First paragraph.\n\n" +
+                      "    Second paragraph.\n\n!!! warning \"Second\"\n\n    Third paragraph.";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        foreach (var sentence in new[] { "First paragraph.", "Second paragraph.", "Third paragraph." })
+        {
+            var chunk = result.Single(c => c.Content.Contains(sentence));
+            Assert.AreEqual(ChunkType.Translatable, chunk.Type, sentence);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("    ```bash\n    echo hello\n    ```")]
+    [DataRow("        echo hello")]
+    [DataRow("\t```bash\n\techo hello\n\t```")]
+    public void TestAdmonitionTranslatesProseAndProtectsNestedCode(string code)
+    {
+        var content = "Introduction.\n\n!!! note \"Example\"\n\n    Before the code.\n\n" +
+                      code + "\n\n    After the code.\n";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        foreach (var sentence in new[] { "Before the code.", "After the code." })
+        {
+            Assert.AreEqual(ChunkType.Translatable,
+                result.Single(c => c.Content.Contains(sentence)).Type);
+        }
+        var codeChunk = result.Single(c => c.Content.Contains("echo hello"));
+        Assert.AreEqual(ChunkType.Static, codeChunk.Type);
+        Assert.IsTrue(codeChunk.Content.Contains(code));
+    }
+
+    [TestMethod]
+    public void TestFencedCodeAfterAdmonitionHeaderStaysStatic()
+    {
+        var content = "Introduction.\n\n!!! note \"Title\"\n\n```csharp\nvar x = 1;\n```\n\n" +
+                      "    var y = 2;";
+        var result = _shredder.Shred(content);
+        AssertRoundTrip(content, result);
+
+        foreach (var code in new[] { "var x = 1;", "var y = 2;" })
+        {
+            var chunk = result.Single(c => c.Content.Contains(code));
+            Assert.AreEqual(ChunkType.Static, chunk.Type, "Code outside the admonition must remain protected");
+        }
     }
 
     [TestMethod]
