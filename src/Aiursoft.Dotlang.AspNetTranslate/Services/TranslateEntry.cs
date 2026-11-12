@@ -395,7 +395,7 @@ public class TranslateEntry(
         }
 
         // Sort specifically to make output deterministic
-        foreach (var kv in uniqueEntries.OrderBy(k => k.Key))
+        foreach (var kv in uniqueEntries.OrderBy(k => k.Key, StringComparer.Ordinal))
         {
             // change " to &quot; for XML compatibility
             // change < to &lt; and > to &gt; for XML compatibility
@@ -676,7 +676,7 @@ public class TranslateEntry(
         logger.LogInformation("Found {Count} existing keys in _useless_for_localizer", existingKeys.Count);
         
         // Find new keys that need to be added
-        var newKeys = allKeys.Where(k => !existingKeys.Contains(k)).OrderBy(k => k).ToList();
+        var newKeys = allKeys.Where(k => !existingKeys.Contains(k)).OrderBy(k => k, StringComparer.Ordinal).ToList();
         
         if (newKeys.Count == 0)
         {
