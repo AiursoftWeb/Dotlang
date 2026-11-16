@@ -1,5 +1,6 @@
-# ASP.NET Core App Translator
+# Aiursoft Dotlang
 
+<a name="aspnet-core-app-translator"></a>
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/AiursoftWeb/dotlang/blob/master/LICENSE)
 [![Pipeline stat](https://badge-proxy.aiursoft.com/aiursoft/dotlang/badges/master/pipeline.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/pipelines)
 [![Test Coverage](https://badge-proxy.aiursoft.com/aiursoft/dotlang/badges/master/coverage.svg)](https://gitlab.aiursoft.com/aiursoft/dotlang/-/pipelines)
@@ -9,19 +10,39 @@
 
 This app helps you generate translated `.cshtml` files and `resources` files. Based on the [Ollama](https://ollama.com/) AI model, it translates the content inside `@Localizer[""]` tags in your ASP.NET Core project.
 
+## Overview
+
+### What is Dotlang?
+
+Extract and translate ASP.NET Core localization resources, translate folders and reuse the translation engines from .NET applications.
+
 ## Installation
 
-Requirements:
-
-1. [.NET 10 SDK](http://dot.net/)
-
-Run the following command to install this tool:
+Install the CLI with the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0):
 
 ```bash
 dotnet tool install --global Aiursoft.Dotlang
 ```
 
+Update an existing installation:
+
+```bash
+dotnet tool update --global Aiursoft.Dotlang
+```
+
+Remove the CLI:
+
+```bash
+dotnet tool uninstall --global Aiursoft.Dotlang
+```
+
 ## Usage
+
+Run the command to see available options:
+
+```bash
+dotlang --help
+```
 
 After getting the binary, run it directly in the terminal.
 
@@ -77,7 +98,8 @@ Will help you generate `.resx` files for all the `.cshtml` files in the current 
 | 4 | `generate-resx-annotations` | Scans strings in `[Display]`, `[Required]`, and other DataAnnotation attributes, then translates and writes them to the appropriate resource files. |
 | 5 | `auto-dedup-resx-keys` | Removes duplicate keys from all `.resx` files. |
 
-## Use as a simple translator
+<a name="use-as-a-simple-translator"></a>
+### Use as a simple translator
 
 This tool can also be used to simply translate a folder of files from one language to another.
 
@@ -97,8 +119,8 @@ Options:
 * `--token`: The Ollama token to use.
 * `-k`, `--skip-existing-files`: Skip existing files.
 
-
-## Auto-generate View Injections
+<a name="auto-generate-view-injections"></a>
+### Auto-generate View Injections
 
 This command scans your project for localizable strings in Controllers and ViewModels, specifically looking for:
 
@@ -111,7 +133,8 @@ It then injects these strings into a `ViewModelArgsInjector` service to ensure t
 dotlang auto-generate-view-injections-for-aiursoft-template --path .
 ```
 
-## Use as a library
+<a name="use-as-a-library"></a>
+### Use as a library
 
 You can also use the core logic as a library in your own project.
 
@@ -178,7 +201,8 @@ await folderEngine.TranslateAsync(
     skipExistingFiles: false);
 ```
 
-### Translate plain text
+<a name="translate-plain-text"></a>
+**Translate plain text**
 
 You can also use the `OllamaBasedTranslatorEngine` to translate plain text strings directly.
 
@@ -191,7 +215,8 @@ var chineseText = await translator.TranslateAsync(englishText, "zh-CN");
 Console.WriteLine(chineseText); // 你好，世界！
 ```
 
-### Advanced Usage with TranslateEntry
+<a name="advanced-usage-with-translateentry"></a>
+**Advanced Usage with TranslateEntry**
 
 ```csharp
 var entry = serviceProvider.GetRequiredService<TranslateEntry>();
@@ -213,20 +238,8 @@ await entry.StartLocalizeDataAnnotationsAsync(path, langs, true, 8);
 await entry.StartWrapWithLocalizerAsync(path, true);
 ```
 
-## Run locally
-
-Requirements about how to run
-
-1. [.NET 10 SDK](http://dot.net/)
-2. Ollama.
-2. Execute `dotnet run` to run the app
-
-## Run in Microsoft Visual Studio
-
-1. Open the `.sln` file in the project path.
-2. Press `F5`.
-
-## How does this work?
+<a name="how-does-this-work"></a>
+### How does this work?
 
 * Find all files ends with `.cshtml`.
 * foreach `cshtml` file, replace all text in tag surrounded with `@Localizer[""]` with the content inside.
@@ -235,7 +248,21 @@ Requirements about how to run
 
 The Core Translator won't override any existing translation nor resources files. If your content was already surrounded with `@Localizer[""]`, we won't touch it.
 
-## Before running the translator
+<a name="caution"></a>
+### Caution
+
+Running this under your project folder may ruin your project! It may change your `cshtml`! Do run `git commit` under your project before running this app.
+
+## Configuration
+
+Configuration is supplied through command-line options and, for library consumers, `TranslateOptions`. The complete existing command examples, folder options and service-registration sample are retained in Usage.
+
+Use `dotlang --help` and `dotlang <command> --help` for current options. Translation commands require a model, endpoint and credential as documented for each command; concurrent requests are controlled by the applicable command options. Configure an endpoint that implements the API expected by that command, and keep real provider credentials out of committed files.
+
+Install and configure Ollama when using an Ollama endpoint. A configured compatible remote provider is used directly; a local model server is not supplied by installing the CLI.
+
+<a name="before-running-the-translator"></a>
+**Before running the translator**
 
 * Follow the document here [ASP.NET Core Localization](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/localization?view=aspnetcore-2.1)
 
@@ -277,14 +304,43 @@ Use the following code to inject localizer:
 
 Now run this app!
 
-## Caution
+## Development
 
-Running this under your project folder may ruin your project! It may change your `cshtml`! Do run `git commit` under your project before running this app.
+Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
+
+From the repository root, restore and build:
+
+```bash
+dotnet restore Aiursoft.Dotlang.sln
+dotnet build Aiursoft.Dotlang.sln --no-restore
+```
+
+<a name="run-locally"></a>
+<a name="local-run"></a>
+Run the tool from source, with the prerequisites and configuration above:
+
+```bash
+dotnet run --project src/Aiursoft.Dotlang/Aiursoft.Dotlang.csproj -- --help
+```
+
+<a name="run-in-microsoft-visual-studio"></a>
+In Microsoft Visual Studio, open `Aiursoft.Dotlang.sln`, select `Aiursoft.Dotlang` as the startup project and press `F5`. Configure the arguments and environment for the task you want to run.
+
+Run the existing tests:
+
+```bash
+dotnet test Aiursoft.Dotlang.sln --no-restore
+```
+
 
 ## How to contribute
 
 There are many ways to contribute to the project: logging bugs, submitting pull requests, reporting issues, and creating suggestions.
 
-Even if you with push rights on the repository, you should create a personal fork and create feature branches there when you need them. This keeps the main repository clean and your workflow cruft out of sight.
+Even if you have push rights on the repository, you should create a personal fork and create feature branches there when you need them. This keeps the main repository clean and your workflow cruft out of sight.
 
 We're also interested in your feedback on the future of this project. You can submit a suggestion or feature request through the issue tracker. To make this process more effective, we're asking that these include more information to help define them more clearly.
+
+## License
+
+Licensed under the [MIT License](https://github.com/AiursoftWeb/dotlang/blob/master/LICENSE).
